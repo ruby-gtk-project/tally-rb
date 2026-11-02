@@ -7,7 +7,7 @@ in `.reports/`.
 |---|---|
 | Upstream spec | `origin/trunk` @ `e9986b010c950d2df91b682769b744c412348e0c` |
 | Port branch | `ruby` |
-| Last audit | 13 open gaps, clean = false |
+| Last audit | `2f14cbb` — **3 open gaps + 7 coverage gaps + 5 accountability findings**, clean = false |
 
 ## Upstream
 
@@ -58,106 +58,139 @@ mapping is `.reports/component-identification.md`, Step 4.
 | `po/{fr,id,it}.po`, `po/MESSAGES.pot` | the same four files |
 | `flake.nix` install phase, `rakelib/gettext.rake` | `Makefile` `install`, `.mo` build, `pot`/`po` rules |
 
-The last parity audit put 20 of 26 units at parity. All 18 upstream signals and
-all 4 actions are wired; every live widget instance upstream builds has a
-counterpart; the stylesheet matches modulo indentation. Nothing here has been
-compared against upstream *running* — see Open gaps.
+The last parity audit (`.reports/`, regenerated at `2f14cbb`) puts **19 of 22
+units at parity**. All 18 upstream signals and all 4 actions are wired and
+fired; every live widget instance upstream builds has a counterpart; the
+stylesheet is upstream's three heredocs transcribed verbatim, identical modulo
+indentation; 41 code msgids and 23 metadata msgids are byte-identical in both
+directions; all three languages reach the screen.
+
+Runs, all performed for that audit and none transcribed from a previous one:
+
+| Command | Result |
+|---|---|
+| `nix develop --command xvfb-run -a ruby test/drive_tally.rb` | **214 of 214 checks passed, DRIVE OK** (62 steps, 15 shots) |
+| `nix develop --command ruby -e '…RSpec…'` | **83 examples, 0 failures** |
+| `nix develop --command rake pot:check` | `po/MESSAGES.pot` is up to date |
+| `LANGUAGE=fr` / `it` / `id`, window built headless | `Compteur` / `Contatore` / `Penghitung` |
 
 ## Not started
 
-Upstream components with no Ruby counterpart at all:
-
-| Upstream | Status |
-|---|---|
-| `ca.vlacroix.Tally.json` | not ported — no Flatpak manifest in the port |
-| `ca.vlacroix.Tally.Devel.json` | not ported |
-| `.github/workflows/ci.yml` (flatpak-builder) | not ported — `.github/workflows/` holds only `translations.yml` |
-| `tally.doap` | not ported |
-| `tally.png` (README screenshot) | not ported |
-| `main.c` `main()` load-failure branch | not ported — `exe/tally` has no `rescue` |
+**Nothing.** Every upstream file now has a Ruby counterpart; the mapping above
+is complete. The six rows that stood here until `2f14cbb` — both Flatpak
+manifests, the CI job, the doap, the README screenshot and `main.c`'s
+load-failure branch — were all built by `7d042e3` and `2f14cbb`, and this table
+went on listing them as absent for two commits. That is Finding 1 of
+`.reports/accountability-ensurance.md`.
 
 ## Open gaps
 
-13 gaps across the parity reports in `.reports/`; clean = false.
+3 component gaps, 7 coverage gaps and 5 accountability findings across the
+parity reports in `.reports/`; **clean = false**.
 
-`.reports/component-parity.md` — 6:
+`.reports/component-parity.md` — 3:
 
-1. The app cannot be installed the way upstream is installed: no Flatpak
-   manifest, no `.Devel` manifest, no CI job that builds one. Upstream's only
-   documented install route is Flathub.
-2. A failed start says nothing to the user. `main.c:125-133` prints a
-   translated unrecoverable-error sentence to stderr and exits with the Lua
-   error code; `exe/tally` produces a Ruby backtrace in English.
-3. `tally.doap` is not ported.
-4. The README shows no picture of the app. The driver writes twelve
-   screenshots to `tmp/shots/`, which is gitignored; none is committed.
-5. `lib/tally/color_selector.rb:40` sets `valign = :center` in the
-   constructor, so it applies at all three call sites. Upstream sets it only
-   at `counter:colorrow`; the search bar and the new-counter dialog default to
-   `FILL`. `valign` needs to become a per-site argument.
-6. Nothing has been compared against upstream running. Upstream is a
+1. `lib/tally/color_selector.rb:40` sets `valign = :center` in the
+   constructor, so it applies at all three call sites. Upstream sets it only at
+   `counter:colorrow` (`counter.lua:201-207`); `searchcolorbox`
+   (`main.lua:317-321`) and `tallycolorbox` (`main.lua:567-571`) set none, so
+   upstream's are `FILL`. `valign` needs to become a per-site argument.
+2. `lib/tally/counter_drag_row.rb:49` sets `valign = :center` on the drag
+   preview's spin button; `counter.lua:471-473` sets nothing on it.
+3. Nothing has been compared against upstream *running*. Upstream is a
    Flatpak-only Lua app and has not been built here, so every "looks the same"
-   claim rests on reading two source trees. Two of the port's own shots
-   (`11-shortcuts.png`, `12-about.png`) catch the dialog mid-animation behind
-   the main window and are not evidence.
+   claim rests on reading two source trees and on 15 screenshots of the port
+   alone.
 
-`.reports/accountability-ensurance.md` — 6:
+`.reports/test-parity.md` — parity is **0/0**, met trivially: upstream has no
+test suite at all (census empty, no `test/` directory, no test target in the
+`Makefile`, no test job in its CI). The port therefore **inherits no safety
+net** — not one check in it was written from an upstream test. Seven coverage
+gaps against the port's own suites, each a behaviour the port builds and no
+check exercises:
 
-7. `lib/tally/application.rb:38-45` excuses the missing Flatpak packaging
-   rather than recording it as a gap; the paragraph needs replacing in place.
-8. The startup-failure gap is recorded nowhere in the port itself.
-9. `tally.doap` and `tally.png` are absent and, before this file, no file in
-   the port mentioned either.
-10. There is no `FINDINGS.md`. Six ruby-gnome binding defects are recorded
-    only as inline comments in the files that work around them
-    (`application.rb:94-96`, `main_window.rb:182-187`, `styles.rb:234-243`,
-    `counter_row.rb:305-311`, `icons.rb:103-109`,
-    `shortcuts_dialog.rb:97-99`), where a gap row cannot cite them.
-11. The `.reports/` ledgers went stale: they were written against `eb1f26ae`
-    and not regenerated when `0dfc40d8` closed four rows. Ledgers must
-    regenerate in the same commit as any change that moves a row.
-12. Five "the port fixes an upstream bug" claims were audited and all five
-    hold; nothing owed, recorded as checked.
+4. C1 — the main window's `close-request` closing every pop-out.
+5. C2 — the About dialog's two translatable link labels and its `copyright`,
+   `developer_name`, `license_type`, `website` and `translator_credits`.
+6. C3 — `Store#queue_write`'s one-second debounce ever actually writing; only
+   the refusal path is driven.
+7. C4 — `search_bar.key_capture_widget`, which is the one thing upstream
+   gets wrong (`main.lua:503` assigns the class table, not the window).
+8. C5 — `scroll_into_view` and `scroll_to_bottom` are asserted to return,
+   not to scroll.
+9. C6 — `Application#shutdown` writing the config.
+10. C7 — **no check in the driver reads a `valign`, `halign`, `margin_*` or
+    `spacing` off any widget**, which is how gaps 1 and 2 above sat inside a
+    green run for two commits.
 
-`.reports/translation-parity.md` — 1:
+`.reports/translation-parity.md` — parity **holds**: 41/41 messages, 51/51
+occurrences, 23/23 metadata messages, 3/3 languages, 0 gaps, 0 extra, verified
+on screen in all three. Two open items, neither a parity gap:
 
-13. 41 live upstream msgids against 40 in the port. The missing key is the
-    startup-failure message from `main.c:127`; it is now `#~`-obsolete in
-    `fr`, `id` and `it`, so three existing translations are dead. A further 18
-    translated strings no longer reach the screen, and the catalogues carry
-    four fuzzy and three empty entries each.
+11. The port has **no gettext domain and no `.mo`** — `Tally::Locale` reads
+    `po/*.po` at runtime. Delivery works; `msgfmt -c` validation, plural forms,
+    `msgctxt` and the `LC_MESSAGES` lookup path do not exist.
+12. Seven msgids are English in all three languages (`Add to List`,
+    `Create Counter`, `New Counter`, `No Counters`, `Reorder in List`,
+    `Show in a Separate Window`, `Support this app!`). Upstream shows the same
+    seven in English, because its `po/MESSAGES.pot` is dated 2025-06-21 and
+    four of the seven were renamed after that. The fix is an upstream issue and
+    **it has not been filed**.
 
-`.reports/test-parity.md`: upstream has no test suite, so 0 tests are owed and
-0 are ported. Extra, not parity: `spec/` runs 83 examples and
-`test/drive_tally.rb` 105 driven checks across 34 steps, both green.
+`.reports/accountability-ensurance.md` — 5:
 
-## Blockers
+13. This file lied in six places about work that exists (above). Fixed in the
+    same commit as that report; the rule it broke — ledgers regenerate in the
+    commit that moves a row — has now been broken twice.
+14. Five ledgers carried "passes 105 driven checks" through two commits of
+    behaviour without re-running anything. The number is 214.
+15. There is still no `FINDINGS.md`. Six ruby-gnome binding defects are
+    recorded only as inline comments (`application.rb:156-157`,
+    `main_window.rb:183-187`, `styles.rb:234-243`, `counter_row.rb:281-291`
+    and `:320-325`, `icons.rb:21-28` and `:94-100`,
+    `shortcuts_dialog.rb:97-99`), where no gap row can cite them.
+16. The two alignment divergences above survived a second audit, and the axis
+    they live on is unverified (C7).
+17. Six "the port fixes an upstream bug" claims were re-audited and **all six
+    hold**; three of them are genuine upstream bugs with user-visible
+    consequences and **none has been reported upstream**.
 
-Things that cannot be ported as-is, and why.
+## How the port is spelled differently
+
+Not blockers. Every item below is built and driven, and none of it may be
+cited to excuse a gap. These are the places where upstream's mechanism has no direct
+Ruby spelling and the port reaches the same behaviour another way. Each one is
+also a reason some future gap might be *hard*, which is `FINDINGS.md`'s job —
+and `FINDINGS.md` does not exist yet, which is Open gap 15.
 
 - **No declarative UI to transcribe.** Upstream has no `.ui`, no `.blp` and no
   GSettings schema. Every component was recovered by reading `main.lua` (862
   lines) and `counter.lua` (510 lines); the port is written from behaviour.
-- **`main.c` does not port.** It exists only to boot a Lua state, `#embed` Lua
+- **`main.c` is a Lua bootstrap, and its behaviour is in Ruby.** It exists only
+  to boot a Lua state, `#embed` Lua
   bytecode and pass `-DPACKAGE`/`-DVERSION` from the Makefile. Ruby replaces
   all of it (`exe/tally` plus `lib/tally/rb/version.rb`). Its one portable
-  behaviour — the load-failure message — is Gap 2.
-- **The save format cannot be kept.** Upstream's config file is executable Lua
+  behaviour — the load-failure message — is ported, at
+  `lib/tally/application.rb:59-125`.
+- **The save format is not kept, and must not be.** Upstream's config file is executable Lua
   source read with `load()`. A Ruby port must not eval it, so the port stores
   JSON. There is no read-compatibility with an existing upstream config beyond
   the one-way importer in `lib/tally/lua_config.rb`.
 - **`Adwaita::Application` is broken in the Ruby bindings.** Upstream's
   `Adw.Application` becomes `Gtk::Application` with Adwaita widgets inside.
-- **LuaGObject sugar has no Ruby equivalent.** `extra_css_classes`,
-  `top_bars = …`, inline children in the constructor table and `on_notify.foo`
-  become `add_css_class`, `add_top_bar`, `append` and
-  `signal_connect('notify::foo')`. Mechanical, but it is most of the diff.
+- **LuaGObject's constructor-table sugar is spelled out here.**
+  `extra_css_classes`, `top_bars = …`, inline children in the constructor table
+  and `on_notify.foo` become `add_css_class`, `add_top_bar`, `append` and
+  `signal_connect('notify::foo')`. Every one is present; it is mechanical, and
+  it is most of the diff.
 - **Drag-and-drop by GObject value is the riskiest piece.**
   `Gdk.ContentProvider.new_for_value(GObject.Value(Adw.ExpanderRow, row))` and
   `Gdk.ContentFormats.new_for_gtype(Adw.ExpanderRow)` depend on wrapping a
-  widget in a `GObject::Value` of its own type. Implemented in
-  `lib/tally/counter_row.rb`; the fallback if the bindings fight back is
-  button-only reordering.
+  widget in a `GObject::Value` of its own type. **Implemented and working** —
+  `lib/tally/counter_row.rb:287-291, :326-371`, driven in both directions by
+  steps 47–49. It took two binding defects to get there (the provider's gtype,
+  and `GtkDropTarget::drop` handing the handler a `GLib::Value` rather than the
+  widget), both fixed in `2f14cbb`. There is no fallback and none is owed.
 - **`Gtk.ShortcutsWindow`/`Group`/`Shortcut` are deprecated in GTK 4.18.** The
   local libadwaita is 1.9.0 and has `Adw.ShortcutsDialog`, so the structure
   maps but the widget names do not.

@@ -3,450 +3,499 @@
 |  |  |
 |---|---|
 | Upstream | `origin/trunk` @ `e9986b010c950d2df91b682769b744c412348e0c` |
-| Port | `ruby` @ `0dfc40d8db4335c55114b631c8228a60ec804a0f` |
-| Units | 26 |
-| Units at parity | **20 / 26** |
-| Verdict | **not at parity — 6 gaps** |
+| Port | `ruby` @ `2f14cbbebfa83db2cf8c7349b0be9b108744b353` |
+| Units | 22 |
+| Units at parity | **19 / 22** |
+| Verdict | **not at parity — 3 open gaps** |
 
 Inventory and file mapping: `.reports/component-identification.md`.
+Runtime gate re-run for this audit: `nix develop --command xvfb-run -a ruby
+test/drive_tally.rb` → **214 of 214 checks passed, DRIVE OK**, 62 steps,
+15 screenshots under `tmp/shots/`.
+
+## What changed since the last audit
+
+The last ledger was written at `0dfc40d8` and reported 6 gaps. Four have been
+closed by `7d042e3` and `2f14cbb` and are verified closed here:
+
+| Was | Now |
+|---|---|
+| Gap 1 — no Flatpak manifest, no CI | `data/org.rubygtkproject.Tally.json` and `.Devel.json` exist; `.github/workflows/flatpak.yml` builds **both** in Flathub's `gnome-49` image, where upstream's `ci.yml` builds one |
+| Gap 2 — a failed start says nothing | `Application.boot` / `.build_application` print upstream's exact translated sentence to stderr and exit non-zero; driven, step 34 |
+| Gap 3 — `tally.doap` and the README screenshot absent | `data/org.rubygtkproject.Tally.doap`, `data/screenshot.png`, referenced from `README.md:24` |
+| Gap 4 (part) — the two drag-and-drop bugs | `2f14cbb` fixed the `GLib::Value` unwrap and the content-provider gtype; driven, steps 47–49 |
+
+Gaps 5 and 6 of that ledger are still open and are Gaps 1 and 3 below.
 
 ## The headline
 
-The widget code is in better shape than any port this young has a right to be.
-Every live widget instance upstream builds has a counterpart; the stylesheet is
-byte-identical modulo indentation; all 18 signals and all 4 actions are wired;
-the app builds, runs headlessly and passes 105 driven checks.
+The four axes come out even nearly everywhere, and the comparison is not a
+scan: `component-scan.sh` cannot read Lua and returns **zero rows** for
+upstream, so every upstream row in this ledger was censused by hand. On that
+census:
 
-That is exactly the result to be adversarial about, so here is where it is not
-true:
+- **Count** — every widget instance upstream builds has a counterpart. The
+  three colour selectors, which upstream open-codes three times, are one class
+  used three times; the 7-check repeater is 7 checks at each site.
+- **Style** — the stylesheet is upstream's three heredocs transcribed verbatim
+  into `Styles::BASE`, `::LIGHT` and `::DARK`, including upstream's own
+  `.colorselector checkbox.system` typo in the dark sheet. The 22 attached
+  classes are the same set. Verified rendering: steps 39–42 parse both
+  providers with errors unswallowed and swap them on `notify::dark`.
+- **Behaviour** — all 18 upstream signals and all 4 actions are wired, and
+  each one is *fired* by the driver, not merely connected.
+- **Text** — 41 code msgids and 23 metadata msgids, byte-identical, both
+  directions empty. See `.reports/translation-parity.md`.
 
-1. The app cannot be installed the way upstream is installed. Upstream ships
-   on Flathub and nowhere else; the port has no Flatpak manifest and no CI
-   that builds one.
-2. A failure to start says nothing to the user, in any language.
-3. Two project-metadata files and the README screenshot are absent.
-4. One widget carries an alignment upstream does not give it at two of its
-   three sites.
-5. Nothing has been compared against upstream *running*. The port's twelve
-   screenshots are of the port; there is no upstream side.
-
-## Units with no port file at all — 4 gaps
-
-### Gap 1 — the app cannot be installed the way upstream is installed
-
-Upstream ships `ca.vlacroix.Tally.json` and `ca.vlacroix.Tally.Devel.json`
-(flatpak manifests building Lua 5.4 and LuaGObject inside `org.gnome.Sdk`,
-with `make DEVEL=true` for the second), and `.github/workflows/ci.yml` runs
-`flatpak/flatpak-github-actions/flatpak-builder@v6` against the first on every
-push to `trunk`. Upstream's README offers exactly one install route: a Flathub
-badge. `flatpak-builder .build ca.vlacroix.Tally.json --user --install` is the
-documented way to run the app.
-
-The port has neither manifest, and `.github/workflows/` holds only
-`translations.yml`. A user cannot install this port the way they install the
-app it is a port of.
-
-`lib/tally/application.rb:38-45` records this, and that record is the second
-half of the gap — see `.reports/accountability-ensurance.md`, Finding 1.
-
-**Owed:** a `.json` manifest (and its `.Devel` variant) that builds the port
-inside the GNOME SDK, plus the CI job that proves it still builds.
-
-### Gap 2 — a failed start says nothing to the user
-
-`main.c:125-133`: when `luaL_loadbuffer` fails, upstream prints
-`gettext("An unrecoverable error occurred when loading Tally, preventing the
-program from starting.\n")` to stderr and exits with the Lua error code. The
-message is translated — it is one of the 41 msgids, and `fr`, `id` and `it`
-all have it.
-
-`exe/tally` is six lines with no `rescue`. A load failure produces a Ruby
-backtrace in English. The msgid is now `#~`-obsolete in all three catalogues,
-so the translation is dead as well (see `.reports/translation-parity.md`,
-Gap 1).
-
-**Owed:** the executable catches a startup failure, prints that exact
-translated sentence to stderr, and exits non-zero.
-
-### Gap 3 — `tally.doap` is not ported
-
-Upstream ships a DOAP project description at the repository root — the file
-GNOME infrastructure reads for maintainer, homepage, bug database and
-programming language. The port has none.
-
-**Owed:** the same file, retargeted to this port's names and URLs.
-
-### Gap 4 — the README shows no picture of the app
-
-Upstream's `README.md` opens with `![tally](tally.png)` and ships that PNG.
-The port's README has no screenshot of the app; the driver writes twelve into
-`tmp/shots/`, which `.gitignore`d scratch, and none of them is committed or
-referenced.
-
-**Owed:** a committed screenshot of the port, in the README, where upstream
-puts one.
-
-## Units with a port file and a named gap — 2 gaps
-
-### Gap 5 — the colour selector is centred where upstream does not centre it
-
-`lib/tally/color_selector.rb:40` sets `self.valign = :center` in the
-constructor, so it applies at all three call sites. Upstream sets it at one:
-
-| Site | Upstream | Port |
-|---|---|---|
-| `counter:colorrow` (the menu's Color row) | `valign = "CENTER"` | `:center` — parity |
-| `main.lua` `searchcolorbox` (the search bar) | **no valign** (default `FILL`) | `:center` — **gap** |
-| `main.lua` `tallycolorbox` (the new-counter dialog) | **no valign** (default `FILL`) | `:center` — **gap** |
-
-Small, and it is still a style-axis difference on two of three sites, found by
-reading rather than by any scan, and exactly the shape of thing the CSS axis
-exists to catch.
-
-**Owed:** `valign` becomes a per-site argument, `:center` only where
-`counter:colorrow` sets it.
-
-### Gap 6 — nothing has been compared against upstream running
-
-Step 4 and Step 5 of this skill are half-done. The port is driven
-(`test/drive_tally.rb`, 105 checks, green under `xvfb-run`) and twelve
-screenshots are written. What does not exist is the other side: upstream is a
-Flatpak-only Lua app and has not been built or run here, so every "looks the
-same" claim in this ledger rests on reading two source trees.
-
-Two of the port's own shots are also not showing what they claim to.
-`11-shortcuts.png` and `12-about.png` capture the main window with the dialog
-ghosted behind it mid-animation — the dialog's contents are legible only
-because they bleed through. A shot that needs squinting is not evidence.
-
-**Owed:** build upstream (the manifest from Gap 1 makes this possible for the
-port too), run both side by side, and re-take the dialog shots after the
-present animation settles.
+Three things are not true, and two of them are one-line divergences that no
+screenshot of the port alone could ever surface.
 
 ---
 
-## Unit-by-unit comparison
+## Gap 1 — the colour selector is centred at two sites upstream does not centre
 
-`Up ×` and `Port ×` are live instances. `Text` is `✓` when every string the
-widget shows is marked and byte-identical to upstream's msgid, `—` when it
-shows none.
+`lib/tally/color_selector.rb:40` sets `self.valign = :center` in the
+constructor, so it applies at all three call sites.
 
-### Unit 1 — main window · `main.lua` window class → `lib/tally/main_window.rb`
+Upstream sets it at exactly one:
+
+- `counter.lua:201-207` — `counter:colorrow`'s box: `valign = "CENTER"`.
+- `main.lua:317-321` — `searchcolorbox`: orientation, spacing 6 and
+  `extra_css_classes` only. **No valign**, so it defaults to `FILL`.
+- `main.lua:567-571` — `tallycolorbox`: the same three properties. **No
+  valign.**
+
+Port: `lib/tally/search_bar.rb:61` and
+`lib/tally/new_counter_dialog.rb:84` both build `ColorSelector` and both
+therefore get `CENTER`. In the search bar the box is one of two children of a
+vertical box with 6px spacing and 6px margins, and in the dialog it is the
+middle of three children of a vertical box with 12px spacing — in both places
+`FILL` and `CENTER` lay out differently once the box has slack, and the
+28×28px check buttons do not fill their row.
 
 | Widget | Up × | Port × | CSS | Signals | Text | Verdict |
 |---|---:|---:|---|---|:-:|---|
-| `Adw.ApplicationWindow` | 1 | 1 | ✓ `devel` | ✓ `close-request` | ✓ `Tally` | parity |
-| `Adw.ToolbarView` | 1 | 1 | — | — | — | parity |
+| `Gtk.Box` (search colour box) | 1 | 1 | ✓ `colorselector` | — | — | **gap**: `valign = CENTER` upstream does not set |
+| `Gtk.Box` (dialog colour box) | 1 | 1 | ✓ `colorselector` | — | — | **gap**: same |
+| `Gtk.Box` (`counter:colorrow`) | 1 | 1 | ✓ `colorselector` | — | — | parity |
+| `Gtk.CheckButton` ×7, each site | 7 | 7 | ✓ per-colour classes; first unclassed in `:radio`, `system` in `:multi` | ✓ `notify::active` | ✓ tooltips from `Colors.name` | parity |
+
+**Owed:** `valign` becomes a per-site argument, defaulting to the GTK default
+and passed as `:center` only from `CounterMenu`.
+
+## Gap 2 — the drag preview's spin button is centred and upstream's is not
+
+`lib/tally/counter_drag_row.rb:49` sets `spin.valign = :center`.
+
+`counter.lua:471-473` — `counter:duplicate` builds
+`Gtk.SpinButton.new_with_range(0, 1000000, 1)` and sets nothing else on it. The
+row's *real* spin button (`counter.lua:48-50`) does get `valign = "CENTER"`;
+the preview's deliberately does not, so upstream's drag icon shows a
+full-height spin button and the port's shows a centred one.
+
+| Widget | Up × | Port × | CSS | Signals | Text | Verdict |
+|---|---:|---:|---|---|:-:|---|
+| `Adw.ExpanderRow` (preview) | 1 | 1 | ✓ colour class, `expanded` copied | — | ✓ title | parity |
+| `Gtk.Image` (preview handle) | 1 | 1 | ✓ `drag-handle` | — | — | parity |
+| `Gtk.SpinButton` (preview) | 1 | 1 | — | — | — | **gap**: `valign = CENTER` upstream does not set |
+| `CounterMenu` in duplicate mode | 1 | 1 | — | ✓ nothing wired, every control desensitised | ✓ | parity |
+
+Driven: step 46 asserts the preview's title, colour class, expanded state and
+value, and `test/drive_tally.rb:580-587` asserts every control on it is
+insensitive. **No check looks
+at the preview's alignment**, which is why this survived a green run.
+
+**Owed:** drop the `valign` from `CounterDragRow#spin_button`, or state why
+the preview should differ from upstream's.
+
+## Gap 3 — nothing has been compared against upstream running
+
+Every "looks the same" claim in this ledger rests on reading two source trees
+and on the port's own 15 screenshots. Upstream is a Flatpak-only Lua app
+(`flatpak-builder .build ca.vlacroix.Tally.json --user --install` is its only
+documented route; the manifest builds Lua 5.4 and LuaGObject from source inside
+`org.gnome.Sdk`) and it has not been built on this machine, so there is no
+upstream side to compare against.
+
+`component-parity` Step 4 says so plainly: reading a class name tells you
+nothing about colour, spacing or weight. The stylesheet being transcribed
+verbatim makes this cheaper than it would otherwise be — the only thing left to
+be wrong is attachment, which the `css` axis above covers — but it does not
+close the row.
+
+**Owed:** build upstream's Flatpak, run both apps at the same size and compare
+the 15 states the driver already shoots.
+
+---
+
+## Units at parity — the full ledger
+
+Every row below says `parity` on all four axes. The `Driven` column names the
+driver step that fires the behaviour; a row with no step is noted.
+
+### Unit 1 — the application  ·  `main.lua` app object + `main.c` → `lib/tally/application.rb`, `exe/tally`, `lib/tally/rb/version.rb`
+
+| Component | Up × | Port × | CSS | Signals / actions | Text | Verdict |
+|---|---:|---:|---|---|:-:|---|
+| application object | 1 | 1 | — | ✓ `startup`, `activate`, `shutdown` | — | parity — `Adw.Application` → `Gtk::Application`, a binding limitation (`Adwaita::Application` is unusable from Ruby), recorded |
+| `app.quit` action | 1 | 1 | — | ✓ `activate` → `app.quit` | — | parity |
+| accelerators | 4 | 4 | — | ✓ identical table | — | parity (driven, step 38) |
+| load-failure branch | 1 | 1 | — | — | ✓ `An unrecoverable error occurred when loading Tally, preventing the program from starting.\n` byte-identical, trailing newline included | parity (driven, step 34) |
+| `devel` build | 1 | 1 | ✓ `devel` on both window kinds | — | — | parity (driven, step 57) — `-DDEVEL` → `TALLY_DEVEL`, and the port applies `devel` to the pop-out too, where `is_devel` is out of scope in upstream's `counter.lua` and the class never lands. An **explained divergence**, in the port's favour |
+
+Explained extra: the port sets `icon_name` on both windows, which upstream does
+not — upstream leans on the installed `.desktop` entry, which a development run
+of the port does not have. Harmless, stated here so it is not an unexplained
+extra.
+
+Messages: 1 upstream, 1 in the port. Driven: steps 34, 38, 57.
+
+### Unit 2 — the main window  ·  `main.lua` `window` class → `lib/tally/main_window.rb`
+
+| Component | Up × | Port × | CSS | Signals | Text | Verdict |
+|---|---:|---:|---|---|:-:|---|
+| `Adw.ApplicationWindow` | 1 | 1 | ✓ `devel` | ✓ `close-request` | ✓ `Tally` | parity — 500×600, 360×294, maximized from config |
+| `Adw.ToolbarView` | 1 | 1 | — | — | — | parity — `top_bar_style` swung by `refresh_toolbar` and `layout_changed` |
 | `Adw.HeaderBar` | 1 | 1 | — | — | — | parity |
-| `Adw.WindowTitle` | 1 | 1 | — | — | ✓ `Tally` | parity |
-| `Gtk.Button` (new) | 1 | 1 | — | ✓ `clicked` | ✓ `Create a new counter` | parity |
-| `Gtk.Button` (delete) | 1 | 1 | ✓ `destructive-action` | ✓ `clicked` | ✓ `Delete selected counters` | parity |
-| `Gtk.ToggleButton` (select) | 1 | 1 | — | ✓ `notify::active` | ✓ both tooltips | parity |
-| `Gtk.ToggleButton` (search) | 1 | 1 | — | ✓ bidirectional bind | ✓ `Filter counters by name and/or color` | parity |
-| `Gtk.MenuButton` | 1 | 1 | — | — | ✓ `Menu` | parity |
-| `Adw.Breakpoint` | 1 | 1 | — | ✓ `apply`, `unapply` | — | parity |
-| `Gio.SimpleAction` `win.shortcuts` | 1 | 1 | — | ✓ `activate` | — | parity |
-| `Gio.SimpleAction` `win.about` | 1 | 1 | — | ✓ `activate` | — | parity |
+| `Adw.WindowTitle` | 1 | 1 | — | — | ✓ `Tally` + `""` | parity |
+| `Gtk.Button` new | 1 | 1 | — | ✓ `clicked` | ✓ `Create a new counter` | parity (step 6) |
+| `Gtk.Button` delete | 1 | 1 | ✓ `destructive-action` | ✓ `clicked` | ✓ `Delete selected counters` | parity (step 16) |
+| `Gtk.ToggleButton` select | 1 | 1 | — | ✓ `notify::active` | ✓ `Select counters to delete` / `Stop selecting without deleting anything` | parity (steps 13-14) |
+| `Gtk.ToggleButton` search | 1 | 1 | — | ✓ `notify::active` via `bind_property` | ✓ `Filter counters by name and/or color` | parity (step 18) |
+| `Gtk.MenuButton` | 1 | 1 | — | — | ✓ `Menu` | parity (steps 35-37) |
+| `Adw.Breakpoint` | 1 | 1 | — | ✓ `apply`, `unapply` | — | parity (steps 43-45) — `new_length` is unbound in Ruby, so `BreakpointCondition.parse("max-width: 400px")` spells the same condition |
+| `win.shortcuts`, `win.about` | 2 | 2 | — | ✓ `activate` ×2 | — | parity (steps 29, 31) |
+| pack order | start: new, delete, select; end: menu, search | identical | — | — | — | parity |
 
-Geometry: 500×600 default / 360×294 minimum on both; `maximize` and the saved
-width/height both restored (`main_window.rb:50-56` and `#restore`).
-`refreshtoolbar` → `refresh_toolbar`, same three effects.
-Messages: 8 upstream, 8 in the port, all byte-identical.
-Driven: empty state ✓, select mode ✓, delete ✓, breakpoint style flip ✓.
-Screenshots: `01-empty`, `04-three-counters`, `06-select-mode`, `07-after-delete`.
+`refresh_toolbar`: ✓ hides the select button and swaps to the status page when
+empty, `FLAT`; list and `RAISED_BORDER` otherwise (steps 1, 60-61).
+`close_popouts` on `close-request`: wired at `main_window.rb:97` → `:333`.
+**Not driven** — see `.reports/test-parity.md`, coverage gap C1.
 
-Two divergences in the port's favour, recorded rather than silently kept:
+Messages: 9 upstream, 9 in the port. Stylesheet: n/a. Driven: 6, 13-18, 29,
+31, 35-38, 43-45, 60-61.
 
-- `main.lua:503` sets `searchbar.key_capture_widget = window` — `window` there
-  is the *class* table, not `self.window`. Type-to-search is dead upstream.
-  `main_window.rb:84-85` passes the real window, so it works here.
-- `main.lua` does not call `setcheckmode` on a counter created while select
-  mode is on; `main_window.rb#add_row` does, so a new row joins in the right
-  state.
+### Unit 3 — the counter list  ·  `main.lua` `lbox`/`clamp`/`multi` → `lib/tally/counter_list.rb`
 
-**Verdict: parity.**
-
-### Unit 2 — counter list · `main.lua` list block → `lib/tally/counter_list.rb`
-
-| Widget | Up × | Port × | CSS | Signals | Text | Verdict |
+| Component | Up × | Port × | CSS | Signals | Text | Verdict |
 |---|---:|---:|---|---|:-:|---|
-| `Gtk.ScrolledWindow` | 1 | 1 | — | — | — | parity |
+| `Gtk.ScrolledWindow` | 1 | 1 | — | — | — | parity — `hscrollbar_policy = NEVER` |
 | `Adw.MultiLayoutView` | 1 | 1 | — | — | — | parity |
 | `Adw.Layout` | 2 | 2 | — | — | — | parity |
 | `Adw.LayoutSlot` | 2 | 2 | — | — | — | parity |
-| `Adw.Clamp` | 1 | 1 | — | — | — | parity |
-| `Gtk.ListBox` | 1 | 1 | ✓ `tally-list`, `boxed-list` ⇄ `separators` | ✓ `row-activated`, filter func | — | parity |
+| `Adw.Clamp` | 1 | 1 | — | — | — | parity — 600, margins 24/24/12/12 |
+| `Gtk.ListBox` | 1 | 1 | ✓ `tally-list`, `boxed-list` ↔ `separators` | ✓ `row-activated`, `set_filter_func` | — | parity (steps 15, 19, 43-45) |
+| `enlarge` / `shrink` | 2 | 2 | ✓ class swap + top-bar style | — | — | parity (steps 43-45) |
+| `counter:scroll` → `viewport.scroll_to` | 1 | 1 | — | — | — | parity by construction; the driver asserts only that the call returns, not that the view moved — coverage gap C5 |
+| `window:scrollbottom` | 1 | 1 | — | — | — | same, 20 ms delay matched |
 
-`enlarge`/`shrink` → `#enlarge`/`#shrink`, same class swap and same top-bar
-style. `counter:scroll` → `#scroll_into_view` via the interposed
-`Gtk.Viewport`, same object upstream's `scrolledwin:get_child()` returns.
-`window:scrollbottom` → `#scroll_to_bottom`, same 20 ms delay.
-Messages: 0 / 0. Driven ✓. **Verdict: parity.**
+Messages: 0. Driven: 1, 15, 19, 43-45, 60-61.
 
-### Unit 3 — counter row · `counter.lua` constructor → `lib/tally/counter_row.rb`
+### Unit 4 — the filter bar  ·  `main.lua` searchbar → `lib/tally/search_bar.rb`
 
-| Widget | Up × | Port × | CSS | Signals | Text | Verdict |
+| Component | Up × | Port × | CSS | Signals | Text | Verdict |
 |---|---:|---:|---|---|:-:|---|
-| `Adw.ExpanderRow` | 1 | 1 | ✓ `spin`, 6 colour classes (dynamic), `checked`, `error` | ✓ `notify::expanded` | — | parity |
-| `Gtk.Image` | 1 | 1 | ✓ `drag-handle` | — | — | parity |
-| `Gtk.CheckButton` | 1 | 1 | — | ✓ `notify::active` | — | parity |
-| `Gtk.Label` | 1 | 1 | — | — | — | parity |
-| `Gtk.SpinButton` | 1 | 1 | — | ✓ `notify::value` | — | parity |
-| `Gtk.DragSource` (controller) | 1 | 1 | — | ✓ `prepare`, `drag-begin` | — | parity |
-| `Gtk.DropTarget` (controller) | 1 | 1 | — | ✓ `drop` | — | parity |
-| `Gtk.DragIcon` | 1 | 1 | — | — | — | parity |
-| `Gtk.ListBox` (preview) | 1 | 1 | ✓ `tally-list`, `boxed-list` | — | — | parity |
+| `Gtk.SearchBar` | 1 | 1 | — | ✓ `notify::search-mode-enabled`, `connect_entry`, `bind_property` BIDIRECTIONAL, `key_capture_widget` | — | parity — and the port fixes an upstream bug: `main.lua:503` assigns `key_capture_widget = window`, the *class table*, not the window instance, so upstream's type-to-search never works. **Not driven** — coverage gap C4 |
+| `Gtk.Box` outer | 1 | 1 | — | — | — | parity — vertical, 6, margins 6/6 |
+| `Gtk.SearchEntry` | 1 | 1 | — | ✓ `search-changed` | ✓ `Filter by name…` (with U+2026, not three dots) | parity (step 18) |
+| colour box + 7 checks | 1 + 7 | 1 + 7 | ✓ all seven classes incl. `system` | ✓ `notify::active` | ✓ | **Gap 1** on `valign` |
+| filter predicate | 1 | 1 | — | — | — | parity — closed bar passes all; empty query + no tick passes all; otherwise colour ∧ substring, case-insensitive, plain not pattern (steps 18-24) |
+| tick clearing on toggle | 1 | 1 | — | — | — | parity (steps 23-24) |
 
-`setcheckmode` → `#check_mode=`, all seven property changes in both branches.
-`read` → `#read` — upstream defines it and never calls it; the port makes it
-live, because this port's edits travel in both directions.
-Spin range 0–1,000,000 step 1 on both; the `GtkText` child's `xalign = 1` kept;
-the suffix box's `hexpand` fix kept (`#align_suffixes`).
-Reorder keeps both orders in step, as `counter.lua:107-129` does.
-Messages: 0 / 0. Driven: drag preview ✓, check mode ✓, recolour ✓.
-**Verdict: parity.**
+Messages: 1 upstream, 1 in the port. Driven: 18-24.
 
-### Unit 4 — row menu · `counter:createmenu` → `lib/tally/counter_menu.rb`
+### Unit 5 — the empty state  ·  `main.lua` `statuspage` → `lib/tally/empty_state.rb`
 
-| Widget | Up × | Port × | CSS | Signals | Text | Verdict |
+| Component | Up × | Port × | CSS | Signals | Text | Verdict |
 |---|---:|---:|---|---|:-:|---|
-| `Adw.EntryRow` | 1 | 1 | — | ✓ `changed` | ✓ `Name` | parity |
-| `Adw.ActionRow` | 3 | 3 | — | — | ✓ `Color`, `Reorder in List`, `Show in a Separate Window` | parity |
-| `Gtk.Box` | 1 | 1 | — | — | — | parity |
-| `Gtk.Button` (order) | 4 | 4 | — | ✓ `clicked` ×4 | ✓ all four tooltips | parity |
-| `Gtk.Button` (pop-out) | 1 | 1 | — | ✓ `clicked` | ✓ `Create a new window for this counter` | parity |
+| `Adw.StatusPage` | 1 | 1 | — | — | ✓ `No Counters` | parity — `icon_name = "tally-symbolic"`, resolved from the shipped theme (step 2) |
+| `Gtk.Button` | 1 | 1 | ✓ `suggested-action`, `pill` | ✓ `clicked` | ✓ `Create Counter` | parity — margins 40/40 (step 3) |
 
-The `duplicate` flag is kept: every control desensitised and nothing connected
-in the drag preview, as `counter.lua:218-219` decides by `self.entry ~= nil`.
-Up/down skip filter-hidden rows via `mapped?`, as upstream's `get_mapped()`
-loops do. Empty name marks the row `error` and keeps the old name, on both.
-Messages: 7 upstream, 7 in the port, byte-identical. Driven ✓.
-**Verdict: parity.**
+Messages: 2 upstream, 2 in the port. Driven: 1, 3, 60-61.
 
-### Unit 5 — drag preview · `counter:duplicate` → `lib/tally/counter_drag_row.rb`
+### Unit 6 — the new-counter dialog  ·  `main.lua` `window:tallydialog` → `lib/tally/new_counter_dialog.rb`
 
-`Adw.ExpanderRow` 1/1, `Gtk.Image` 1/1 with `drag-handle`, `Gtk.SpinButton`
-1/1, colour class and expanded state both carried. Messages 0/0.
-**Verdict: parity.**
-
-### Unit 6 — colour selector · 3 upstream sites → `lib/tally/color_selector.rb`
-
-| Widget | Up × | Port × | CSS | Signals | Text | Verdict |
+| Component | Up × | Port × | CSS | Signals | Text | Verdict |
 |---|---:|---:|---|---|:-:|---|
-| `Gtk.Box` | 3 | 3 | ✓ `colorselector` | — | — | **gap** — see Gap 5 (`valign`) |
-| `Gtk.CheckButton` | 21 | 21 | ✓ `system` (search bar only), 6 colour classes | ✓ `notify::active` | ✓ 7 colour names | parity |
-
-Radio grouping, the ungrouped search-bar variant, and the `system` class being
-attached only in the search bar are all upstream's. The port ignores the
-deactivation edge of `notify::active` where upstream handles both and relies on
-GTK's deactivate-then-activate order — a narrowing, and strictly safer.
-Messages: 7 upstream (`No color`, `Red`, `Orange`, `Yellow`, `Green`, `Blue`,
-`Purple`), 7 in the port, byte-identical.
-Screenshots: `09-colour-filter`, `10-coloured`.
-**Verdict: gap (Gap 5).**
-
-### Unit 7 — search bar · `main.lua` searchbar block → `lib/tally/search_bar.rb`
-
-| Widget | Up × | Port × | CSS | Signals | Text | Verdict |
-|---|---:|---:|---|---|:-:|---|
-| `Gtk.SearchBar` | 1 | 1 | — | ✓ `notify::search-mode-enabled` | — | parity |
-| `Gtk.Box` | 1 | 1 | — | — | — | parity |
-| `Gtk.SearchEntry` | 1 | 1 | — | ✓ `search-changed` | ✓ `Filter by name…` | parity |
-
-Filter predicate matches upstream's three-branch rule exactly: closed bar →
-everything; open with empty query and no colour → everything; otherwise colour
-AND case-folded plain-substring name.
-`connect_entry` ✓, bidirectional bind to the header toggle ✓, ticks cleared on
-every search-mode change ✓.
-Messages: 1 / 1. Driven: `08-search`, `09-colour-filter`.
-**Verdict: parity.**
-
-### Unit 8 — empty state · `main.lua` statuspage → `lib/tally/empty_state.rb`
-
-`Adw.StatusPage` 1/1 (`No Counters`, `tally-symbolic`), `Gtk.Button` 1/1 with
-`suggested-action` + `pill` and 40px side margins, `clicked` wired. Messages
-2/2 byte-identical. Screenshot `01-empty`. **Verdict: parity.**
-
-### Unit 9 — new-counter dialog · `window:tallydialog` → `lib/tally/new_counter_dialog.rb`
-
-| Widget | Up × | Port × | CSS | Signals | Text | Verdict |
-|---|---:|---:|---|---|:-:|---|
-| `Adw.Dialog` | 1 | 1 | — | — | ✓ `New Counter` | parity |
-| `Adw.ToolbarView` | 1 | 1 | — | — | — | parity |
-| `Adw.HeaderBar` | 1 | 1 | — | — | — | parity |
-| `Gtk.Box` | 1 | 1 | — | — | — | parity |
-| `Gtk.Entry` | 1 | 1 | ✓ `error` (dynamic) | ✓ `changed` | ✓ `Name` | parity |
-| `Gtk.Button` | 1 | 1 | ✓ `suggested-action` | ✓ `clicked` | ✓ `Add this counter to the list` | parity |
+| `Adw.Dialog` | 1 | 1 | — | — | ✓ `New Counter` | parity — upstream rebuilds per activation, the port keeps one and blanks it in `#open`, which is the same state a user meets |
+| `Adw.ToolbarView` + `Adw.HeaderBar` | 1 + 1 | 1 + 1 | — | — | — | parity |
+| `Gtk.Box` | 1 | 1 | — | — | — | parity — vertical, 12, margins 12 |
+| `Gtk.Entry` | 1 | 1 | ✓ `error` while empty | ✓ `changed` | ✓ `Name` | parity — `halign = FILL` (step 4) |
+| colour box + 7 checks | 1 + 7 | 1 + 7 | ✓ first unclassed, six accents classed, radio-grouped | ✓ `notify::active` | ✓ | **Gap 1** on `valign` |
+| `Gtk.Button` create | 1 | 1 | ✓ `suggested-action` | ✓ `clicked` | ✓ `Add this counter to the list` | parity — insensitive until named, `halign = CENTER` (step 4) |
 | `Adw.ButtonContent` | 1 | 1 | — | — | ✓ `Add to List` | parity |
 
-Upstream rebuilds the dialog per activation; the port keeps one per window and
-`#open` resets name, error class, sensitivity and colour. Same user-visible
-state. Messages 4/4. Screenshot `02-new-counter-dialog`.
-**Verdict: parity.**
+Create path: ✓ registers the counter, appends the row, writes, scrolls to the
+bottom, focuses the new row, refreshes the toolbar, closes the dialog
+(steps 4-8).
 
-### Unit 10 — pop-out window · `counter:popout` → `lib/tally/counter_window.rb`
+Messages: 4 upstream, 4 in the port. Driven: 3-8.
 
-| Widget | Up × | Port × | CSS | Signals | Text | Verdict |
+### Unit 7 — the primary menu  ·  `main.lua` `tallymenu` → `lib/tally/main_menu.rb`
+
+| Component | Up × | Port × | CSS | Signals / actions | Text | Verdict |
 |---|---:|---:|---|---|:-:|---|
-| `Adw.ApplicationWindow` | 1 | 1 | ✓ `devel` | ✓ `close-request` | ✓ `<name> — Tally` | parity |
-| `Adw.ToolbarView` | 1 | 1 | ✓ colour class (dynamic) | — | — | parity |
+| `Gio.Menu` | 1 | 1 | — | — | — | parity — two items, no sections, no quit item |
+| item → `win.shortcuts` | 1 | 1 | — | ✓ | ✓ `Keyboard Shortcuts` | parity (step 36) |
+| item → `win.about` | 1 | 1 | — | ✓ | ✓ `About Tally` | parity (step 37) |
+
+Messages: 2 upstream, 2 in the port. Driven: 35-37.
+
+### Unit 8 — the About dialog  ·  `main.lua` `aboutwin` → `lib/tally/about_dialog.rb` + `lib/tally/metainfo.rb`
+
+| Component | Up × | Port × | CSS | Signals | Text | Verdict |
+|---|---:|---:|---|---|:-:|---|
+| `Adw.AboutDialog` | 1 | 1 | — | — | ✓ `Tally`, ✓ `translator-credits` | parity — one instance, re-presented |
+| `application_icon` | 1 | 1 | — | — | — | parity — the application id (step 31) |
+| `license_type` | GPL_3_0 | `:gpl_3_0` | — | — | — | parity |
+| `copyright`, `developer_name`, `website` | 3 | 3 | — | — | — | parity — byte-identical to upstream's, including `Copyright © 2024–2025 Victoria Lacroix` and the en-dash. **Not driven** — coverage gap C2 |
+| `issue_url` | 1 | 1 | — | — | — | explained divergence: the port's own tracker, because upstream's cannot act on bugs in a reimplementation |
+| `add_link` | 2 | 2 | — | — | ✓ `Translate this app!`, ✓ `Support this app!` | parity by reading `about_dialog.rb:36-39, 62`. **Not driven** — coverage gap C2, and these are two translatable msgids no check asserts |
+| `release_notes_version` | 1 | 1 | — | — | — | parity — `0.7.3`, from the AppStream file rather than a `-DVERSION` (step 31) |
+| `release_notes` | 1 | 1 | — | — | — | parity — the port reads the `0.7.3` `<description>` out of `data/org.rubygtkproject.Tally.metainfo.xml`, which is byte-identical to upstream's, so the string shown is upstream's heredoc exactly. **Better than upstream**, which keeps a second hand-maintained copy; the heredoc is unmarked upstream and remains untranslatable here, which is upstream's debt, not the port's (step 31) |
+| `version` | 1 | 1 | — | — | — | explained divergence: `0.1.0 (tally 0.7.3)` names both, where upstream names one |
+
+Messages: 5 upstream, 5 in the port. Driven: 31-32, 37.
+
+### Unit 9 — the shortcuts dialog  ·  `main.lua` `newshortcutwindow` → `lib/tally/shortcuts_dialog.rb`
+
+Substitution, recorded with its reason: the entire `Gtk.Shortcuts*` family was
+deprecated in GTK 4.18 in favour of `Adw.ShortcutsDialog`, which has no group
+level. Upstream's one section holding two groups becomes two sections.
+
+| Component | Up × | Port × | CSS | Signals / actions | Text | Verdict |
+|---|---:|---:|---|---|:-:|---|
+| window / dialog | 1 | 1 | — | — | ✓ | parity — upstream rebuilds and makes it modal + transient; `Adw.ShortcutsDialog` is presented against a parent, so one instance |
+| section titles | 2 groups | 2 sections | — | — | ✓ `Main Window`, ✓ `Counter Window` | parity |
+| items | 5 | 5 | — | ✓ `action_name` on each | ✓ `Quit Application` ×2, `Keyboard Shortcuts`, `About Tally`, `Close Window` | parity (step 29) |
+| accelerators shown | 5 | 5 | — | — | — | parity — read from `Application::ACCELS`, so the displayed string cannot drift from the bound one |
+| `app.about` → `win.about` | — | 1 | — | ✓ | — | explained divergence: upstream's item names `app.about`, an action it never registers, so that row is inert upstream. `ALIASES` records upstream's literal and resolves it, so the row works and the mismatch stays readable |
+
+Upstream's section `title` is `app_title`, an undefined Lua global, hence nil.
+The port titles the dialog `Keyboard Shortcuts` — an existing msgid, not a new
+one.
+
+Messages: 5 upstream, 5 in the port (all five already counted above). Driven:
+29-30, 36.
+
+### Unit 10 — the stylesheet  ·  `main.lua` `cssbase`/`csslight`/`cssdark` → `lib/tally/styles.rb`
+
+The port has no `.css` file; the three sheets are heredocs.
+`Styles::BASE + Styles::LIGHT` and `BASE + DARK` were diffed against
+`main.lua`'s `cssbase .. csslight` and `cssbase .. cssdark`: **identical modulo
+leading whitespace** (upstream indents with tabs inside its Lua long strings;
+`<<~CSS` strips the heredoc indent). Every declaration, every selector, every
+`color-mix()` percentage and every `var(--colour-N)` matches, and so does
+upstream's own typo — the dark sheet's last rule is
+`.colorselector checkbox.system`, not `checkbutton`, in both.
+
+| Component | Up × | Port × | Verdict |
+|---|---:|---:|---|
+| `Gtk.CssProvider` | 2 | 2 | parity — base+light, base+dark |
+| priority | 1000000 | 1000000 | parity |
+| `Adw.StyleManager` `notify::dark` swap | 1 | 1 | parity (steps 40-42) |
+| variant sheets | 2 | 2 | parity — no high-contrast variant on either side |
+
+Platform classes used but defined by GTK/libadwaita, correctly absent from both
+sheets: `circular`, `boxed-list`, `separators`, `numeric`,
+`destructive-action`, `suggested-action`, `pill`, `devel`, `error`, `spin`,
+`checked`, `drag-handle`.
+
+`load_from_string` vs `load_from_data` is a bindings-vintage branch, not a
+divergence. Driven: 39-42, with GTK's CSS parser errors routed to a failure
+rather than swallowed.
+
+### Unit 11 — one row in the list  ·  `counter.lua` constructor → `lib/tally/counter_row.rb`
+
+| Component | Up × | Port × | CSS | Signals | Text | Verdict |
+|---|---:|---:|---|---|:-:|---|
+| `Adw.ExpanderRow` | 1 | 1 | ✓ `spin`, colour class (dynamic, 6 values), `checked`, `error` | ✓ `notify::expanded` → scroll after 50 ms | ✓ title is the counter's name | parity (steps 9, 25, 28) |
+| `Gtk.Image` handle | 1 | 1 | ✓ `drag-handle` | — | — | parity (step 13) |
+| `Gtk.CheckButton` | 1 | 1 | — | ✓ `notify::active` → `checked` class | — | parity (steps 13-15) |
+| `Gtk.Label` count | 1 | 1 | — | — | — | parity — hidden, `margin_start = 18`, `halign = END`, `hexpand = false` (steps 13-14) |
+| `Gtk.SpinButton` | 1 | 1 | — | ✓ `notify::value` | — | parity — 0–1 000 000 step 1 page 10 climb 1 digits 0, which is what `new_with_range` produces; `valign = CENTER`, first child `xalign = 1` (step 9) |
+| `Gtk.DragSource` (controller) | 1 | 1 | — | ✓ `prepare`, `drag-begin` | — | parity — `MOVE`, `CAPTURE` (steps 47-48) |
+| `Gtk.DropTarget` (controller) | 1 | 1 | — | ✓ `drop` | — | parity — `MOVE`, `preload`, `Adw.ExpanderRow` gtype (steps 48-49) |
+| drag preview list box | 1 | 1 | ✓ `tally-list`, `boxed-list` | — | — | parity — sized to the row's allocation, `drag_highlight_row`, hotspot at the grab point (step 46) |
+| suffix-box `hexpand` | 1 | 1 | — | — | — | parity — `child.last_child.hexpand = true` |
+| `setcheckmode` | 1 | 1 | — | — | — | parity — both branches, including collapsing and `enable_expansion` (steps 13-14) |
+| `counter:read` | 1 | 1 | — | — | — | parity — dead upstream, live here because the pop-out pushes values the other way (step 10) |
+| `row_activated` → tick | 1 | 1 | — | ✓ | — | parity (step 15) |
+
+Divergence, in the port's favour and recorded: upstream's `counter:popout`
+reassigns `self.spinbtn.on_notify.value`, unhooking this row's handler, so with
+a pop-out open the count label freezes and edits stop being written. The port
+routes both windows through `Counter#value` and `#on_change` instead, so the
+signal count reads 2 upstream against 1 here while the behaviour is strictly
+better. Verified both ways in steps 10 and 12.
+
+Messages: 0 of its own. Driven: 9-15, 25, 28, 46-49.
+
+### Unit 12 — the counter model  ·  `counter.lua` fields/registries → `lib/tally/counter.rb`
+
+Not a widget unit; compared as data plumbing. Upstream's two module-level Lua
+tables (`counters`, `counterrows`) become class-level `Counter.counters` and
+`Counter.rows` with the same jobs — ordered serialization source and
+row→counter lookup. `counter:getcolor`/`setcolor` → `#color_key`/`#color=`;
+`counter:serialize` → `#serialize` (a Hash; `Store` encodes). `counter:delete`
+notifies subscribers *before* leaving the registry, so they can still read its
+index, which is what upstream's inline `table.remove(counters, row:get_index() + 1)`
+relies on.
+
+Upstream's `serialize` dumps every scalar field it finds, so its file also
+carries `checked`, `checkmode`, `drag_x` and `drag_y`; `readcfg` reads only
+name, value and colour. The port writes the three that are read. Equal
+behaviour, smaller file. Specs: `spec/tally/counter_spec.rb`, 17 examples.
+
+### Unit 13 — the row's disclosure  ·  `counter.lua` `counter:createmenu` → `lib/tally/counter_menu.rb`
+
+| Component | Up × | Port × | CSS | Signals | Text | Verdict |
+|---|---:|---:|---|---|:-:|---|
+| `Adw.EntryRow` | 1 | 1 | — | ✓ `changed` | ✓ `Name` | parity — `sensitive = !duplicate` (step 27) |
+| `Adw.ActionRow` colour | 1 | 1 | — | — | ✓ `Color` | parity — `sensitive = !duplicate` (step 28) |
+| `Adw.ActionRow` reorder | 1 | 1 | — | — | ✓ `Reorder in List` | parity — row itself always sensitive, as upstream |
+| `Adw.ActionRow` pop-out | 1 | 1 | — | — | ✓ `Show in a Separate Window` | parity |
+| colour box + 7 checks | 1 + 7 | 1 + 7 | ✓ | ✓ `notify::active` | ✓ | parity — this is the one site upstream *does* centre |
+| order box | 1 | 1 | — | — | — | parity — horizontal, 6, `halign = END`, `valign = CENTER` |
+| `Gtk.Button` ×4 order | 4 | 4 | — | ✓ `clicked` ×4 | ✓ all four tooltips | parity — `sensitive = !duplicate`; up gets `valign = CENTER`, as upstream (step 26) |
+| `Gtk.Button` pop-out | 1 | 1 | — | ✓ `clicked` | ✓ `Create a new window for this counter` | parity — `halign = END`, `hexpand`, `valign = CENTER` (step 11) |
+| `duplicate` mode | 1 | 1 | — | ✓ nothing wired | ✓ | parity (step 46) |
+
+Reorder semantics: ✓ both orders move together; ✓ up and down skip unmapped
+rows; ✓ top/bottom are prepend/append; ✓ every move queues a write and scrolls
+after 50 ms. Rename refusing the empty string and adding `error` to the row: ✓
+(step 27). Renaming retitles the row *and* the pop-out: ✓ (step 27).
+
+Messages: 9 upstream, 9 in the port. Driven: 11, 25-28, 46.
+
+### Unit 14 — the pop-out window  ·  `counter.lua` `counter:popout` → `lib/tally/counter_window.rb`
+
+| Component | Up × | Port × | CSS | Signals / actions | Text | Verdict |
+|---|---:|---:|---|---|:-:|---|
+| `Adw.ApplicationWindow` | 1 | 1 | ✓ `devel` (the port applies it; upstream's `is_devel` is out of scope in `counter.lua`, so upstream's never does) | ✓ `close-request` → destroy | ✓ `<name> — Tally`, with the em dash | parity — 400×300, 360×294, `hide_on_close` (steps 11, 52) |
+| `Adw.ToolbarView` | 1 | 1 | ✓ colour class (dynamic) | — | — | parity — `width_request = 300` |
 | `Adw.HeaderBar` | 1 | 1 | — | — | — | parity |
-| `Adw.WindowTitle` | 1 | 1 | — | ✓ bidirectional bind to the Name entry | ✓ `Tally` | parity |
+| `Adw.WindowTitle` | 1 | 1 | — | ✓ `bind_property("text", …, BIDIRECTIONAL)` against the menu's EntryRow | ✓ `Tally` as subtitle | parity (step 27) |
 | `Gtk.WindowHandle` | 1 | 1 | — | — | — | parity |
-| `Gtk.Box` | 3 | 3 | ✓ `popout` | — | — | parity |
-| `Gtk.Label` | 1 | 1 | ✓ `numeric` | — | — | parity |
-| `Gtk.Button` (−) | 1 | 1 | ✓ `circular` | ✓ `clicked` | ✓ `Decrement by 1` | parity |
-| `Gtk.Button` (+) | 1 | 1 | ✓ `circular` | ✓ `clicked` | ✓ `Increment by 1` | parity |
-| `Gio.SimpleAction` `win.close` | 1 | 1 | — | ✓ `activate` | — | parity |
+| `Gtk.Box` ×3 | 3 | 3 | ✓ `popout` on the number box | — | — | parity — spacings 36 / 24 / 48, margins 24, both centred |
+| `Gtk.Label` | 1 | 1 | ✓ `numeric` | — | — | parity — `width_request = 240`, `halign = CENTER` (step 12) |
+| `Gtk.Button` ×2 | 2 | 2 | ✓ `circular` ×2 | ✓ `clicked` ×2 | ✓ `Decrement by 1`, `Increment by 1` | parity — each insensitive at its end of the range (steps 12, 51) |
+| `win.close` action | 1 | 1 | — | ✓ `activate` | — | parity (step 52) |
 
-Geometry 400×300 / 360×294, `width_request = 300` on the toolbar view,
-`hide_on_close` then destroy-on-close: all upstream's.
-Sensitivity bounds (0 and 1,000,000) kept on both buttons.
+Messages: 4 upstream, 4 in the port. Driven: 11-12, 27-28, 50-52.
 
-One divergence in the port's favour: `counter.lua:406` reassigns
-`self.spinbtn.on_notify.value` inside `popout`, which replaces the list row's
-own handler — upstream's row count label stops updating and its edits stop
-being saved while a pop-out is open. The port routes both windows through
-`Counter#value` instead (`counter_window.rb:17-21`, `#step`).
-Messages 3/3. Screenshot `05-popout`. **Verdict: parity.**
+### Unit 15 — the drag preview  ·  `counter.lua` `counter:duplicate` → `lib/tally/counter_drag_row.rb`
 
-### Unit 11 — shortcuts · `newshortcutwindow` → `lib/tally/shortcuts_dialog.rb`
+See **Gap 2**. Everything else is parity (step 46).
 
-| Upstream | Port | Verdict |
-|---|---|---|
-| `Gtk.ShortcutsWindow` | `Adw.ShortcutsDialog` | correspondence — the `Gtk.Shortcuts*` family is deprecated as of GTK 4.18 |
-| `Gtk.ShortcutsSection` × 1 (title = `app_title`, a nil global) | — | correspondence — upstream's section is untitled |
-| `Gtk.ShortcutsGroup` × 2 | `Adw.ShortcutsSection` × 2 | correspondence — Adw has no group level; verified from `11-shortcuts.png` that two titled sections render as one scrolling page, which is what upstream's two groups do |
-| `Gtk.ShortcutsShortcut` × 5 | `Adw.ShortcutsItem` × 5 | parity |
+### Unit 16 — the colour vocabulary  ·  `main.lua` `lib.getcolorname` → `lib/tally/colors.rb`
 
-All five items keep their title, their `action_name` and their accelerator.
-Accelerators are read from `Application::ACCELS` rather than retyped, so the
-table that binds them is the table that advertises them.
+| Component | Up × | Port × | Text | Verdict |
+|---|---:|---:|:-:|---|
+| `getcolorname` | 1 | 1 | ✓ `No color`, `Red`, `Orange`, `Yellow`, `Green`, `Blue`, `Purple` | parity — nil and `"system"` both answer `No color`, as upstream's first branch does (step 53) |
+| `nil` ↔ `"system"` conversion | inline, four places | `Colors.key` / `.value` | — | parity |
 
-Upstream's `app.about` names no registered action and its row is inert;
-`ALIASES` maps it to `win.about`, which is what upstream actually registers
-and binds F1 to, so the port's row works and the mismatch stays on the page.
-Driven: all four accelerators asserted against `ACCELS`
-(`test/drive_tally.rb:344-353`).
-Messages: 5 titles + the dialog title, all byte-identical upstream msgids
-(`Main Window`, `Counter Window`, `Quit Application`, `Keyboard Shortcuts`,
-`About Tally`, `Close Window`).
-**Verdict: parity**, with the screenshot caveat in Gap 6.
+Messages: 7 upstream, 7 in the port. Driven: 53. Specs:
+`spec/tally/colors_spec.rb`.
 
-### Unit 12 — main menu · `tallymenu` → `lib/tally/main_menu.rb`
+### Unit 17 — the colour selector  ·  three upstream sites → `lib/tally/color_selector.rb`
 
-Two `Gio.Menu` items, `Keyboard Shortcuts` → `win.shortcuts` and
-`About Tally` → `win.about`. No quit item on either side. Messages 2/2.
-**Verdict: parity.**
+Three upstream copies, one class. `:radio` is `counter:colorrow` and the
+dialog; `:multi` is the search bar. The two differences between upstream's
+copies are exactly the two the `mode:` argument makes:
 
-### Unit 13 — about dialog · `aboutwin` → `lib/tally/about_dialog.rb`
+- first button classed `system` in `:multi` (`main.lua:316`) and unclassed in
+  `:radio` (`main.lua:471-474`) — ✓ `classed?`;
+- grouped in `:radio`, ungrouped in `:multi` — ✓ `grouped?`.
 
-`Adw.AboutDialog` 1/1. Application name, copyright, developer, licence
-(`GPL_3_0`), website, translator credits and both `add_link` entries are
-upstream's, with byte-identical msgids. `release_notes_version` is upstream's
-`0.7.3` and the notes come from the AppStream file rather than a second
-hand-kept heredoc, which is the same text by a shorter route.
+Divergence, recorded: upstream's `notify::active` handlers fire on
+deactivation as well, so switching red→blue runs `setcolor("red")` before
+`setcolor("blue")` and lands correctly only because GTK deactivates first. The
+port ignores the deactivation edge in `:radio` mode. Same outcome, one fewer
+spurious write. Driven: 21-24, 28.
 
-`issue_url` points at this port's tracker and `version` reads
-`0.1.0 (tally 0.7.3)`. Both are deliberate retargets of a URL and a version
-number, not dropped behaviour; upstream's tracker cannot act on a bug in a
-reimplementation.
-Driven: `test/drive_tally.rb:359-373` asserts the icon, the release-notes version,
-the notes text and the version string. Screenshot `12-about` (see Gap 6).
-Messages 4/4. **Verdict: parity.**
+**Gap 1** is this unit's `valign`.
 
-### Unit 14 — application · `main.lua` app object + `main.c` → `lib/tally/application.rb`
+### Unit 18 — the store  ·  `main.lua` `readcfg`/`writecfg`/`queuewrite` → `lib/tally/store.rb`
 
-| Thing | Upstream | Port | Verdict |
+| Behaviour | Up | Port | Verdict |
 |---|---|---|---|
-| Accelerators ×4 | `set_accels_for_action` | `ACCELS`, same four pairs | parity |
-| `app.quit` action | `Gio.SimpleAction` | same | parity |
-| `activate` | present the existing window | same | parity |
-| `startup` | build and present | same, plus `Icons.install` and `Styles.install` | parity |
-| `shutdown` | `writecfg()` | `store.write` | parity |
-| Window uniqueness | `if app.active_window then return app.active_window` | memoized `#window` | correspondence — strictly better, since a pop-out is also an active window |
-| `Adw.Application` | yes | `Gtk::Application` | correspondence — `Adwaita::Application` is unusable from these bindings; the windows are Adwaita |
-| `resource_base_path` + GResource | yes | icon search path (`Icons`) | correspondence — Gap-free: all 16 icons ship |
-| `-DDEVEL` | compile flag | `TALLY_DEVEL` env var, `.Devel` app id, `devel` class on both window kinds | correspondence |
-| **load-failure message** | `main.c:131` | **nothing** | **gap — Gap 2** |
+| path | `$XDG_CONFIG_HOME/tally/tally` | identical | parity |
+| atomic write | fill `tallynext`, rename over `tally` | identical | parity (step 5) |
+| temp preferred on read | ✓ | ✓ | parity |
+| temp skipped if it does not parse | ✓ | ✓ | parity (step 55) |
+| non-directory at `tally/` removed | ✓ | ✓ | parity |
+| missing file seeded | `return {}` | `{}` as JSON | parity |
+| debounce | 1 s, pending-count trick | identical | parity by reading; **not driven** — coverage gap C3 |
+| geometry read off the window at write time | ✓ | ✓ | parity |
+| shutdown writes outright | `app:on_shutdown` | `Application#shutdown` | parity by reading; **not driven** — coverage gap C6 |
+| format | Lua source, `load()`ed | JSON | **explained divergence**: `load()` on a file in a user's home is arbitrary code execution, which upstream only survives because it runs inside a Flatpak sandbox |
+| upstream config readable | — | `LuaConfig` parses upstream's grammar without evaluating it, imports once, keeps `tally.lua.bak` | parity restored by a route upstream does not have (step 56) |
+| unreadable config refused rather than clobbered | upstream overwrites | the port refuses to write | **better than upstream**, recorded (step 55) |
 
-**Verdict: gap (Gap 2).**
+`LuaConfig` handles all three `%q` traps: C99 hex floats (`0x1.8p+1`), bare
+`true`/`false` from `"maximized = %q"`, and `\`+newline escapes. Specs:
+`spec/tally/store_spec.rb`, `spec/tally/lua_config_spec.rb`. Driven: 5, 33,
+55-56, 62.
 
-### Unit 15 — styles · `main.lua` style section → `lib/tally/styles.rb`
+### Unit 19 — the icons  ·  `data/tally.gresource.xml` + Makefile → `lib/tally/icons.rb`
 
-The three stylesheets diff clean against upstream's `cssbase`, `csslight` and
-`cssdark` — every selector, every declaration, in order. The only difference is
-indentation (upstream tabs, the port two spaces inside a squiggly heredoc):
+| Component | Up × | Port × | Verdict |
+|---|---:|---:|---|
+| symbolic action icons | 16 | 16 | parity — **byte-identical**, all 16 verified with `cmp` |
+| application icons | 4 | 4 | parity — `.svg` and `-symbolic.svg` for both ids, under the renamed id |
+| delivery | GResource + `resource_base_path` | a `hicolor` theme tree on the icon search path | explained correspondence: compiling a GResource would need a `glib-compile-resources` step |
 
-```
-$ diff <normalised upstream cssbase>  <normalised port BASE>    # only leading whitespace
-$ diff <normalised upstream csslight> <normalised port LIGHT>   # only leading whitespace
-$ diff <normalised upstream cssdark>  <normalised port DARK>    # only leading whitespace
-```
+Driven: step 2 resolves all 16 action icons plus both application icons out of
+the live icon theme, and `Icons#complete?` checks every shipped file is on disk.
 
-Two providers at priority 1,000,000, swapped on `notify::dark`: same mechanism.
+### Unit 20 — the catalogue reader  ·  `main.c` `lua_gettext` → `lib/tally/locale.rb`
 
-Upstream's dark sheet writes `.colorselector checkbox.system` where every other
-rule says `checkbutton` — `checkbox` is not a GTK element name, so the search
-bar's "no colour" button is unstyled in dark mode upstream. The port copies the
-typo verbatim, which is the right call: parity means the same rendering, and
-fixing it here would make the two apps differ.
+`setlocale` + `bindtextdomain("messages", …)` + `textdomain("messages")` +
+`gettext(3)` become a po reader with `LANGUAGE`/`LC_ALL`/`LC_MESSAGES`/`LANG`
+precedence, `fr_CA` before `fr`, fuzzy and obsolete entries dropped, and
+fall-back-to-msgid. Driven: step 54 and, for this audit, live under
+`LANGUAGE=fr`, `it` and `id`. Specs: `spec/tally/locale_spec.rb`.
 
-**Verdict: parity.**
+The delivery mechanism is a divergence with real costs, and it is an open item
+in `.reports/translation-parity.md`, not here.
 
-### Unit 16 — config backend · `readcfg`/`writecfg`/`queuewrite` → `lib/tally/store.rb` + `lua_config.rb`
+### Unit 21 — the AppStream reader  ·  `main.lua`'s release-notes heredoc → `lib/tally/metainfo.rb`
 
-Not a widget unit; compared on behaviour.
+One reader for `data/org.rubygtkproject.Tally.metainfo.xml`, supplying the
+About dialog's `release_notes_version` and `release_notes` from the file rather
+than a second copy. Driven: step 31. Specs: `spec/tally/metainfo_spec.rb`.
 
-| Behaviour | Upstream | Port |
+### Unit 22 — project metadata  ·  four upstream files → `data/`
+
+| Upstream | Port | Diff |
 |---|---|---|
-| Path | `$XDG_CONFIG_HOME/tally/tally` | same |
-| Atomic write | fill `tallynext`, rename over `tally` | same |
-| Stale temp preferred on read | yes | same |
-| Non-directory at `tally/` deleted | yes | same |
-| Debounce | 1 s, counter trick | same, `DEBOUNCE_MS = 1000` |
-| Geometry read off the window at write time | yes | same |
-| Format | Lua source, `load()`ed | JSON |
+| `ca.vlacroix.Tally.metainfo.xml` | `data/org.rubygtkproject.Tally.metainfo.xml` | 3 lines: `<id>`, `<url type="bugtracker">`, `<launchable>`. Every `<name>`, `<summary>`, `<p>`, `<li>`, `<caption>` and all 14 `<release>` blocks byte-identical |
+| `ca.vlacroix.Tally.Devel.metainfo.xml` | `.Devel` counterpart | same shape |
+| `ca.vlacroix.Tally.desktop` | `data/org.rubygtkproject.Tally.desktop` | 1 line: `Icon=` |
+| `ca.vlacroix.Tally.Devel.desktop` | `.Devel` counterpart | same |
+| `ca.vlacroix.Tally.json`, `.Devel.json` | `data/org.rubygtkproject.Tally{,.Devel}.json` | the modules differ by language, as they must; `app-id`, runtime 49, SDK, command and all four `finish-args` identical |
+| `.github/workflows/ci.yml` | `.github/workflows/flatpak.yml` | branch `trunk`→`ruby`; builds both manifests where upstream builds one; and the port names its bundle after the app id rather than leaving upstream's `bundle: palette.flatpak`, which is a copy-paste from another project |
+| `tally.doap` | `data/org.rubygtkproject.Tally.doap` | re-identified, and the port uses the canonical RDF and DOAP namespace URIs where upstream writes `http://w3.org/…` and `htp://usefulinc.com/…`, both of which put every element outside DOAP |
+| `tally.png` | `data/screenshot.png` | the port's own app, shot by `test/shoot_screenshot.rb`, referenced from `README.md:24` |
 
-The format change is the one place a port can destroy a user's data quietly, so
-the port reads upstream's Lua grammar without evaluating it (`LuaConfig`),
-copies the original to `tally.lua.bak`, rewrites as JSON once, and refuses to
-write at all when neither reader understood the file. Upstream has no such
-refusal — it is additive, and it is tested (`spec/tally/store_spec.rb`,
-`spec/tally/lua_config_spec.rb`).
+Messages: 23 metadata msgids, identical sets both directions. Neither side
+extracts them into a catalogue — see `.reports/translation-parity.md`.
 
-**Verdict: parity.**
-
-### Units 17–20 — assets and metadata
-
-| Unit | Upstream | Port | Verdict |
-|---|---|---|---|
-| 17 · icon bundle | 16 symbolic action icons in a GResource | the same 16 as files under `data/icons/hicolor/scalable/actions`, on the theme search path | parity — all 16 present, verified by name |
-| 18 · application icon | 4 SVGs installed by `Makefile` | 4 SVGs under `data/icons/hicolor/{scalable,symbolic}/apps`, installed by `flake.nix` | parity |
-| 19 · desktop entries | `.desktop` ×2 with Name/Comment/Keywords in en/fr/id/it | identical but for the `Icon=` id | parity |
-| 20 · AppStream metainfo | `.metainfo.xml` ×2, 15 releases | identical but for the bugtracker URL; 15 releases | parity |
-
-### Units 21–24 — the four with nothing opposite them
-
-Gaps 1 (×3: two manifests and the CI), 3 and 4. Covered above.
-
-### Units 25–26 — process
-
-| Unit | Verdict |
-|---|---|
-| 25 · the colour selector's alignment | **gap — Gap 5** |
-| 26 · driven and screenshotted against upstream | **gap — Gap 6** |
+---
 
 ## Rules check
 
-- Totals were not used as a verdict; every unit is compared on its own.
-- Every extra port file is accounted for: `colors.rb`, `color_selector.rb`,
-  `counter_drag_row.rb`, `main_menu.rb`, `empty_state.rb` and `icons.rb` are
-  factored-out repeats of upstream blocks, each named in the mapping;
-  `lua_config.rb` and `metainfo.rb` exist because the port changed the config
-  format and reads release notes from AppStream rather than a heredoc.
-- No gap was closed by citing a document. `PORTING.md` does not exist in this
-  port, and `lib/tally/application.rb`'s Flatpak paragraph was treated as the
-  excuse it is, not as authority — see `.reports/accountability-ensurance.md`.
-- Text-axis findings are recorded in both ledgers; see
-  `.reports/translation-parity.md`.
+- No row says `n/a`, `not applicable`, `out of scope` or `does not carry over`.
+  Three rows are gaps; every other row names where its counterpart lives.
+- Every extra in the port is explained in place: the two `icon_name`
+  assignments, `Colors`, `ColorSelector`, `Metainfo`, `LuaConfig`, the
+  `ShortcutsDialog` aliases, the JSON format, the refusal-to-clobber, and the
+  five upstream bugs the port does not reproduce.
+- The two binding limitations that shape the port (`Adwaita::Application`,
+  `BreakpointCondition.new_length`) are recorded as *reasons a correspondence
+  is spelled differently*, never as reasons a row is closed.
+- The CSS axis was checked on both halves: which classes are attached, and
+  whether the port's sheet defines them. Both hold.
+- Gap 3 is the honest statement that Step 4 of the skill — run both and look —
+  has not been performed on the upstream side.

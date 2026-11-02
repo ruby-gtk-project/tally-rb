@@ -1,5 +1,13 @@
 # Component inventory — tally → tally-rb
 
+> **Superseded.** This is the first round's inventory, written at port sha
+> `eb1f26ae`. Its counts and its "not ported" rows are two commits out of date:
+> the Flatpak manifests, the CI job, the doap, the screenshot and the
+> load-failure branch all exist now, and the driver runs 214 checks rather than
+> 105. **Read `.reports/component-identification.md` instead** — it is this
+> document's successor and is regenerated against the current sha. Kept, not
+> deleted, so the port's history survives; not to be cited.
+
 |  |  |
 |---|---|
 | Upstream | `origin/trunk` @ `e9986b010c950d2df91b682769b744c412348e0c` ("tally: Archive repository") |
