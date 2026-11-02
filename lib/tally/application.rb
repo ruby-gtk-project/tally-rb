@@ -1,54 +1,120 @@
 # frozen_string_literal: true
 
-require "gtk4"
 require "adwaita"
+require_relative "icons"
+require_relative "locale"
+require_relative "main_window"
+require_relative "store"
+require_relative "styles"
 
 module Tally
-  # The port's application: one window, and a status page saying the port has
-  # not been written yet. Everything else grows from here — replace the status
-  # page with the real content, keep the shape.
+  # Application is the port of main.lua's app object — its accelerators, its
+  # app.quit action, and the on_activate / on_startup / on_shutdown callbacks —
+  # together with main.c's lua_get_is_devel.
   #
-  # House style (see .claude/skills/ruby-gtk): every widget is a memoized
-  # method, all configuration lives in its `tap`, assembly happens only in
-  # `build`, and the launcher is one expression.
+  # Three behaviours from upstream are worth naming:
+  #
+  # * One window, ever. Upstream's window constructor opens by returning
+  #   app.active_window if there is one, and on_activate only presents the
+  #   existing window. Here the window is a memoized accessor, which is the
+  #   same guarantee without having to ask the application what it already has
+  #   — a pop-out window is also an active window, so that question has the
+  #   wrong answer as soon as one is open.
+  # * Activating a running instance presents the window rather than opening
+  #   anything, which is what makes the second launch of the app raise the
+  #   first one.
+  # * Shutdown writes the config file outright, so a quit inside the one-second
+  #   debounce window still saves.
+  #
+  # The devel build is upstream's -DDEVEL compile flag, which main.c reports to
+  # Lua and main.lua turns into the "devel" CSS class on both window kinds —
+  # the striped header bar that says "this is not the app you installed". A
+  # compile flag is no use in Ruby, so TALLY_DEVEL in the environment stands in
+  # for it, and it also moves the application id onto the .Devel suffix the
+  # Flatpak manifest uses, so a devel run has its own window grouping.
+  #
+  # Upstream also sets resource_base_path and registers a GResource for its
+  # icons; this port ships them as files and Icons adds that directory to the
+  # icon theme instead.
   class Application
+    APP_ID = "org.rubygtkproject.Tally"
+    DEVEL_SUFFIX = ".Devel"
+    DEVEL_ENV = "TALLY_DEVEL"
+    TRUTHY = %w[1 true yes on].freeze
+
+    ACCELS = {
+      "win.shortcuts" => ["<Ctrl><Shift>question"],
+      "win.about"     => ["F1"],
+      "win.close"     => ["<Ctrl>W"],
+      "app.quit"      => ["<Ctrl>Q"],
+    }.freeze
+
+    def self.devel? = TRUTHY.include?(ENV.fetch(DEVEL_ENV, "").strip.downcase)
+
+    def initialize(store: Store.default, devel: devel_default)
+      @store = store
+      @devel = devel
+    end
+
+    attr_reader :store
+
+    def devel? = @devel
+
+    def application_id
+      if devel?
+        "#{APP_ID}#{DEVEL_SUFFIX}"
+      else
+        APP_ID
+      end
+    end
+
     def build
-      app.tap do
-        app.signal_connect("activate") do
-          window.tap do |win|
-            win.content = toolbar_view
-          end
-
-          toolbar_view.tap do |view|
-            view.add_top_bar(header_bar)
-            view.content = status_page
-          end
-
-          window.present
-        end
+      app.tap do |application|
+        ACCELS.each { |action, accels| application.set_accels_for_action(action, accels) }
+        application.add_action(quit_action)
+        application.signal_connect("startup") { startup }
+        application.signal_connect("activate") { activate }
+        application.signal_connect("shutdown") { shutdown }
       end
     end
 
-    # Adwaita::Application is broken in the Ruby bindings; the application
-    # object comes from Gtk and only the window is Adwaita.
-    def app = @app ||= Gtk::Application.new("org.rubygtkproject.Tally", :default_flags)
+    def run(argv = []) = app.run(argv)
 
+    # Adwaita::Application is unusable from the Ruby bindings; the application
+    # object comes from Gtk and only the windows are Adwaita.
+    def app = @app ||= Gtk::Application.new(application_id, :default_flags)
+
+    # The single window. Built on first use, which is upstream's uniqueness
+    # guarantee.
     def window
-      @window ||= Adwaita::ApplicationWindow.new(app).tap do |win|
-        win.title = "tally"
-        win.set_default_size(800, 600)
+      @window ||= MainWindow.new(app, store: store, devel: devel?).build
+    end
+
+    def quit_action
+      @quit_action ||= Gio::SimpleAction.new("quit", nil).tap do |action|
+        action.signal_connect("activate") { app.quit }
+        action.enabled = true
       end
     end
 
-    def toolbar_view = @toolbar_view ||= Adwaita::ToolbarView.new
-    def header_bar = @header_bar ||= Adwaita::HeaderBar.new
+    private
 
-    def status_page
-      @status_page ||= Adwaita::StatusPage.new.tap do |page|
-        page.title = "tally"
-        page.description = "The Ruby port has not been written yet."
-        page.icon_name = "applications-engineering-symbolic"
+      def devel_default = self.class.devel?
+
+      # The icon search path and the stylesheet both need a display, so they
+      # cannot be set up before startup.
+      def startup
+        Icons.install
+        Styles.install
+        window.present
       end
-    end
+
+      def activate
+        window.present
+      end
+
+      def shutdown
+        store.write
+      end
   end
 end

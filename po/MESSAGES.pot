@@ -1,0 +1,192 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-06-21 14:51-0400\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: counter.lua:240 main.lua:318
+msgid "Name"
+msgstr ""
+
+#: counter.lua:246
+msgid "Color"
+msgstr ""
+
+#: counter.lua:255
+msgid "Move to top"
+msgstr ""
+
+#: counter.lua:258
+msgid "Move counter to the top of the current list"
+msgstr ""
+
+#: counter.lua:264
+msgid "Move to bottom"
+msgstr ""
+
+#: counter.lua:267
+msgid "Move counter to the bottom of the current list"
+msgstr ""
+
+#: counter.lua:282
+msgid "Move up"
+msgstr ""
+
+#: counter.lua:285
+msgid "Move counter to just above the previous row"
+msgstr ""
+
+#: counter.lua:292
+msgid "Move down"
+msgstr ""
+
+#: counter.lua:295
+msgid "Move counter to just below the next row"
+msgstr ""
+
+#: counter.lua:327
+msgid "Create a new window for this counter"
+msgstr ""
+
+#: counter.lua:334
+msgid "Show in a separate window"
+msgstr ""
+
+#: counter.lua:417 main.lua:140 main.lua:232 main.lua:486
+msgid "Tally"
+msgstr ""
+
+#: counter.lua:431
+msgid "Decrement by 1"
+msgstr ""
+
+#: counter.lua:440
+msgid "Increment by 1"
+msgstr ""
+
+#: main.lua:37
+msgid "No color"
+msgstr ""
+
+#: main.lua:39
+msgid "Red"
+msgstr ""
+
+#: main.lua:41
+msgid "Orange"
+msgstr ""
+
+#: main.lua:43
+msgid "Yellow"
+msgstr ""
+
+#: main.lua:45
+msgid "Green"
+msgstr ""
+
+#: main.lua:47
+msgid "Blue"
+msgstr ""
+
+#: main.lua:49
+msgid "Purple"
+msgstr ""
+
+#: main.lua:146
+msgid "translator-credits"
+msgstr ""
+
+#: main.lua:150
+msgid "Translate this app!"
+msgstr ""
+
+#: main.lua:151
+msgid "Send a tip!"
+msgstr ""
+
+#: main.lua:152
+msgid ""
+"<p>Various enhancements have been made to allow Tally to be used with a "
+"screen reader. Keyboard shortcuts for closing counter windows have been "
+"added.</p>\n"
+msgstr ""
+
+#: main.lua:157
+msgid "Main Window"
+msgstr ""
+
+#: main.lua:160 main.lua:177
+msgid "Quit Application"
+msgstr ""
+
+#: main.lua:165 main.lua:200
+msgid "Keyboard Shortcuts"
+msgstr ""
+
+#: main.lua:170 main.lua:201
+msgid "About Tally"
+msgstr ""
+
+#: main.lua:174
+msgid "Counter Window"
+msgstr ""
+
+#: main.lua:182
+msgid "Close Window"
+msgstr ""
+
+#: main.lua:209
+msgid "Create a new counter"
+msgstr ""
+
+#: main.lua:213
+msgid "Delete selected counters"
+msgstr ""
+
+#: main.lua:219
+msgid "Filter counters by name and/or color"
+msgstr ""
+
+#: main.lua:224
+msgid "Menu"
+msgstr ""
+
+#: main.lua:228 main.lua:384
+msgid "Select counters to delete"
+msgstr ""
+
+#: main.lua:241
+msgid "Filter by name…"
+msgstr ""
+
+#: main.lua:309
+msgid "Add to list"
+msgstr ""
+
+#: main.lua:311
+msgid "Add this counter to the list"
+msgstr ""
+
+#: main.lua:380
+msgid "Stop selecting without deleting anything"
+msgstr ""
+
+#: main.c:134
+#, c-format
+msgid ""
+"An unrecoverable error occurred when loading Tally, preventing the program "
+"from starting.\n"
+msgstr ""
