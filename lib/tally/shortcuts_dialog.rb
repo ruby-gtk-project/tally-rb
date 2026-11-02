@@ -30,7 +30,7 @@ module Tally
   # accelerator for win.about too, so "app.about" names an action that does not
   # exist and the row is inert. ACTIONS below records upstream's literal value
   # and ALIASES resolves it to the action the port actually registers, so the
-  # row works and the mismatch stays visible.
+  # row works and the mismatch stays visible. FINDINGS.md U3.
   #
   # Upstream also builds a new window per activation and makes it modal and
   # transient for the main window; Adw.ShortcutsDialog is presented against a
@@ -94,8 +94,7 @@ module Tally
         end
       end
 
-      # Positional, not keyword, arguments — even though the error a no-argument
-      # new raises advertises the signatures as "title: utf8, accelerator: utf8".
+      # Positional, not keyword, arguments. FINDINGS.md B8.
       def item(label, action)
         Adwaita::ShortcutsItem.new(_(label), accelerator_for(action).to_s).tap do |shortcut|
           shortcut.action_name = resolve(action)

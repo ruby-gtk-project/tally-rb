@@ -70,7 +70,11 @@ module Tally
     end
 
     def color_selector
-      @color_selector ||= ColorSelector.new(mode: :radio, selected: counter.color_key) do |selector|
+      @color_selector ||= ColorSelector.new(
+        mode:     :radio,
+        selected: counter.color_key,
+        valign:   :center,
+      ) do |selector|
         recolor(selector.selected_color)
       end
     end

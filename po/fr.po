@@ -28,9 +28,9 @@ msgstr "Traduire cette application!"
 msgid "Support this app!"
 msgstr "Traduire cette application!"
 
-#: ../lib/tally/about_dialog.rb:47 ../lib/tally/counter_window.rb:100
-#: ../lib/tally/counter_window.rb:215 ../lib/tally/main_window.rb:50
-#: ../lib/tally/main_window.rb:110
+#: ../lib/tally/about_dialog.rb:47 ../lib/tally/counter_window.rb:102
+#: ../lib/tally/counter_window.rb:217 ../lib/tally/main_window.rb:50
+#: ../lib/tally/main_window.rb:111
 msgid "Tally"
 msgstr "Compteur"
 
@@ -82,40 +82,40 @@ msgstr "Nom"
 msgid "Color"
 msgstr "Couleur"
 
-#: ../lib/tally/counter_menu.rb:80
+#: ../lib/tally/counter_menu.rb:84
 msgid "Reorder in List"
 msgstr ""
 
-#: ../lib/tally/counter_menu.rb:101
+#: ../lib/tally/counter_menu.rb:105
 msgid "Move counter to the top of the current list"
 msgstr "Mettre ce compteur au début de la liste présente"
 
-#: ../lib/tally/counter_menu.rb:108
+#: ../lib/tally/counter_menu.rb:112
 msgid "Move counter to just above the previous row"
 msgstr "Mettre ce compteur juste au dessus le compteur précédent"
 
-#: ../lib/tally/counter_menu.rb:115
+#: ../lib/tally/counter_menu.rb:119
 msgid "Move counter to just below the next row"
 msgstr "Mettre ce compteur juste dessous le compteur suivant"
 
-#: ../lib/tally/counter_menu.rb:122
+#: ../lib/tally/counter_menu.rb:126
 msgid "Move counter to the bottom of the current list"
 msgstr "Mettre ce compteur à la fin de la liste présente"
 
-#: ../lib/tally/counter_menu.rb:128
+#: ../lib/tally/counter_menu.rb:132
 #, fuzzy
 msgid "Show in a Separate Window"
 msgstr "Ouvrir une fenêtre individuelle pour ce compteur"
 
-#: ../lib/tally/counter_menu.rb:136
+#: ../lib/tally/counter_menu.rb:140
 msgid "Create a new window for this counter"
 msgstr "Créer une nouvelle fenêtre pour ce compteur"
 
-#: ../lib/tally/counter_window.rb:121
+#: ../lib/tally/counter_window.rb:123
 msgid "Decrement by 1"
 msgstr "Baisser par 1"
 
-#: ../lib/tally/counter_window.rb:127
+#: ../lib/tally/counter_window.rb:129
 msgid "Increment by 1"
 msgstr "Augmenter par 1"
 
@@ -137,23 +137,23 @@ msgstr "Raccourcis clavier"
 msgid "About Tally"
 msgstr "À propos Compteur"
 
-#: ../lib/tally/main_window.rb:117
+#: ../lib/tally/main_window.rb:118
 msgid "Create a new counter"
 msgstr "Créer un nouveau compteur"
 
-#: ../lib/tally/main_window.rb:125
+#: ../lib/tally/main_window.rb:126
 msgid "Delete selected counters"
 msgstr "Supprimer compteurs sélectionnés"
 
-#: ../lib/tally/main_window.rb:134 ../lib/tally/main_window.rb:297
+#: ../lib/tally/main_window.rb:135 ../lib/tally/main_window.rb:297
 msgid "Select counters to delete"
 msgstr "Sélectionner des compteurs pour supprimer"
 
-#: ../lib/tally/main_window.rb:141
+#: ../lib/tally/main_window.rb:142
 msgid "Filter counters by name and/or color"
 msgstr "Filtrer les compteurs par nom et couleur"
 
-#: ../lib/tally/main_window.rb:149
+#: ../lib/tally/main_window.rb:150
 msgid "Menu"
 msgstr "Menu"
 

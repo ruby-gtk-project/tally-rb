@@ -1,5 +1,17 @@
 # Translation parity — tally / tally-rb
 
+> **Superseded in part — read this first.** Open item 1's own closing
+> condition ("either adopt the gettext gem … or wire a `msgfmt -c` lint over
+> `po/` into the same target that runs the specs") is met on `ruby` since this
+> was written: `rake po:lint` validates all three catalogues with
+> `msgfmt --check --check-format` and runs inside `rake check` alongside the
+> specs and `rake pot:check`. The reader is still a reader — no `.mo`, no
+> plural-forms engine, no `msgctxt`, no `LC_MESSAGES` lookup — and that is
+> recorded as spelling, not as a gap. Open items 2 (seven English msgids,
+> inherited from a stale upstream template, **not filed upstream**) and 3 (all
+> 23 metadata msgids reaching no catalogue in either project, with no `data/`
+> extraction on the port's side) are untouched and still open.
+
 |  |  |
 |---|---|
 | Upstream | `origin/trunk` @ `e9986b010c950d2df91b682769b744c412348e0c` |

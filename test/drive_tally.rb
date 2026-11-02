@@ -40,6 +40,46 @@ FileUtils.rm_rf(SHOTS)
 
 Tally::Counter.clear
 
+# Turns the main loop over for `ms` milliseconds and comes back.
+#
+# A step cannot sleep: every step runs inside a GLib timeout, so the clock the
+# step is waiting on is dispatched by the very loop a sleep would block. This
+# iterates the default context without blocking until the deadline passes,
+# which dispatches the timeouts Store#queue_write and
+# CounterList#scroll_to_bottom arm.
+def pump(ms)
+  (Process.clock_gettime(Process::CLOCK_MONOTONIC) + (ms / 1000.0)).then do |deadline|
+    while Process.clock_gettime(Process::CLOCK_MONOTONIC) < deadline
+      GLib::MainContext.default.iteration(false)
+    end
+  end
+end
+
+# Every Gtk::Label text in a widget tree.
+#
+# The two rows an Adw.AboutDialog's add_link puts on its page are not readable
+# as properties — there is no get_links — so the only way to assert the labels
+# upstream names are really there is to look at what the dialog built.
+def labels(widget, found = [])
+  found.tap do
+    if widget.is_a?(Gtk::Label)
+      found << widget.label
+    end
+    widget.first_child.then do |first|
+      child = first
+      while child
+        labels(child, found)
+        child = child.next_sibling
+      end
+    end
+  end
+end
+
+# Runs xdotool against the display the driver is already on, quietly.
+def xdotool(*args)
+  system("xdotool", *args, out: File::NULL, err: File::NULL)
+end
+
 GtkDriver.drive(Tally::Application.new, shots: SHOTS) do |d, app|
   d.window { app.window }
 
@@ -377,6 +417,40 @@ GtkDriver.drive(Tally::Application.new, shots: SHOTS) do |d, app|
 
   d.step("the about dialog renders") { d.shot("12-about") }
 
+  # C2. The dialog is still showing from the step above, which is what makes
+  # the link labels findable: an Adw.AboutDialog builds its page when it is
+  # presented, not when it is constructed. Upstream's aboutwin sets all six of
+  # these literals; the driver asserted four properties and neither link, so a
+  # dropped copyright or a missing tip jar would have gone green.
+  d.step("the about dialog carries upstream's remaining literals") do
+    app.window.about_dialog.then do |dialog|
+      d.check("its copyright is upstream's") do
+        dialog.copyright == Tally::AboutDialog::COPYRIGHT
+      end
+      d.check("so is its developer name") do
+        dialog.developer_name == Tally::AboutDialog::DEVELOPER
+      end
+      d.check("its licence is GPL-3.0, as COPYING says") do
+        dialog.license_type == :gpl_3_0
+      end
+      d.check("its website is upstream's") do
+        dialog.website == Tally::AboutDialog::WEBSITE
+      end
+      d.check("its translator credits are the translatable msgid") do
+        dialog.translator_credits == "translator-credits"
+      end
+      d.check("the issue tracker is the port's own, not upstream's") do
+        dialog.issue_url == Tally::AboutDialog::ISSUE_URL
+      end
+      labels(dialog).then do |texts|
+        d.check("the translation link is on the page") do
+          texts.include?("Translate this app!")
+        end
+        d.check("and so is the tip jar") { texts.include?("Support this app!") }
+      end
+    end
+  end
+
   d.step("what was built survives a reload from disk") do
     app.window.visible_dialog&.close
     Tally::Store.default.write
@@ -682,11 +756,313 @@ GtkDriver.drive(Tally::Application.new, shots: SHOTS) do |d, app|
     end
   end
 
+  # C7. Every alignment, margin and spacing upstream writes down, read back
+  # off the widget that carries it. Nothing in this driver looked at the
+  # geometry axis before, which is how two divergences — a valign on the
+  # colour selector at all three call sites where upstream sets it at one, and
+  # a valign on the drag preview's spin button where upstream sets none — sat
+  # inside a green run for two commits. The numbers below are upstream's
+  # literals, cited to the line that sets them.
+  d.step("the rows and the row menu carry upstream's geometry") do
+    app.window.rows.first.then do |row|
+      d.check("the spin button is centred (counter.lua:49)") do
+        row.spin_button.valign == :center
+      end
+      d.check("its text is right-aligned (counter.lua:48)") do
+        row.spin_button.first_child.xalign == 1.0
+      end
+      d.check("the count label is pushed 18px off the title (counter.lua:31)") do
+        row.count_label.margin_start == 18
+      end
+      d.check("and aligned to the end (counter.lua:32)") do
+        row.count_label.halign == :end
+      end
+      d.check("it does not expand (counter.lua:30)") { !row.count_label.hexpand? }
+
+      row.menu.then do |menu|
+        d.check("the menu's colour selector is spaced 6 (counter.lua:204)") do
+          menu.color_selector.spacing == 6
+        end
+        d.check("and centred, the one site upstream centres (counter.lua:205)") do
+          menu.color_selector.valign == :center
+        end
+        d.check("the order box is spaced 6 (counter.lua:261)") do
+          menu.order_box.spacing == 6
+        end
+        d.check("aligned to the end (counter.lua:262)") { menu.order_box.halign == :end }
+        d.check("and centred (counter.lua:263)") { menu.order_box.valign == :center }
+        d.check("the pop-out button is aligned to the end (counter.lua:280)") do
+          menu.popout_button.halign == :end
+        end
+        d.check("expands (counter.lua:281)") { menu.popout_button.hexpand? }
+        d.check("and is centred (counter.lua:282)") do
+          menu.popout_button.valign == :center
+        end
+      end
+    end
+  end
+
+  d.step("the drag preview's spin button is left unaligned, as upstream leaves it") do
+    app.window.rows.first.then do |row|
+      Tally::CounterDragRow.new(row.counter).build.then do |preview|
+        d.check("no valign, which is FILL (counter.lua:471-473)") do
+          preview.spin_button.valign == :fill
+        end
+        d.check("where the real row's is centred (counter.lua:49)") do
+          row.spin_button.valign == :center
+        end
+      end
+    end
+  end
+
+  d.step("the pop-out window carries upstream's geometry") do
+    app.window.rows.first.popout.then do |window|
+      d.check("the number is centred (counter.lua:385)") do
+        window.count_label.halign == :center
+      end
+      d.check("the button box is spaced 48 (counter.lua:413)") do
+        window.button_box.spacing == 48
+      end
+      d.check("centred vertically (counter.lua:414)") { window.button_box.valign == :center }
+      d.check("and horizontally (counter.lua:415)") { window.button_box.halign == :center }
+      d.check("the number box is spaced 24 (counter.lua:421)") do
+        window.number_box.spacing == 24
+      end
+      d.check("and centred vertically (counter.lua:422)") do
+        window.number_box.valign == :center
+      end
+      d.check("the content box is spaced 36 (counter.lua:429)") do
+        window.content_box.spacing == 36
+      end
+      d.check("inset 24 on every side (counter.lua:430-433)") do
+        [
+          window.content_box.margin_top,
+          window.content_box.margin_bottom,
+          window.content_box.margin_start,
+          window.content_box.margin_end,
+        ] == [24, 24, 24, 24]
+      end
+      d.check("centred vertically (counter.lua:434)") { window.content_box.valign == :center }
+      d.check("and horizontally (counter.lua:435)") { window.content_box.halign == :center }
+    end
+  end
+
+  d.step("the window, the search bar and the new-counter dialog carry theirs") do
+    app.window.search_bar.then do |bar|
+      d.check("the search box is spaced 6 (main.lua:328)") do
+        bar.content_box.spacing == 6
+      end
+      d.check("with 6 above and below (main.lua:329-330)") do
+        [bar.content_box.margin_top, bar.content_box.margin_bottom] == [6, 6]
+      end
+      d.check("its colour selector is spaced 6 (main.lua:319)") do
+        bar.color_selector.spacing == 6
+      end
+      d.check("and unaligned, as searchcolorbox is (main.lua:317-321)") do
+        bar.color_selector.valign == :fill
+      end
+    end
+
+    app.window.counter_list.then do |list|
+      d.check("the list box is top-aligned (main.lua:347)") do
+        list.list_box.valign == :start
+      end
+      d.check("the clamp stops at 600 (main.lua:422)") { list.clamp.maximum_size == 600 }
+      d.check("inset 24 at the sides and 12 top and bottom (main.lua:423-426)") do
+        [
+          list.clamp.margin_start,
+          list.clamp.margin_end,
+          list.clamp.margin_top,
+          list.clamp.margin_bottom,
+        ] == [24, 24, 12, 12]
+      end
+    end
+
+    d.check("the status page's button has 40 either side (main.lua:452-453)") do
+      [
+        app.window.empty_state.create_button.margin_start,
+        app.window.empty_state.create_button.margin_end,
+      ] == [40, 40]
+    end
+
+    app.window.new_counter_dialog.then do |dialog|
+      d.check("its box is spaced 12 (main.lua:595)") { dialog.content_box.spacing == 12 }
+      d.check("and inset 12 on every side (main.lua:596-599)") do
+        [
+          dialog.content_box.margin_top,
+          dialog.content_box.margin_bottom,
+          dialog.content_box.margin_start,
+          dialog.content_box.margin_end,
+        ] == [12, 12, 12, 12]
+      end
+      d.check("the name entry fills (main.lua:556)") { dialog.name_entry.halign == :fill }
+      d.check("the create button is centred (main.lua:549)") do
+        dialog.create_button.halign == :center
+      end
+      d.check("its colour selector is spaced 6 (main.lua:569)") do
+        dialog.color_selector.spacing == 6
+      end
+      d.check("and unaligned, as tallycolorbox is (main.lua:567-571)") do
+        dialog.color_selector.valign == :fill
+      end
+    end
+  end
+
   d.step("win.close closes the pop-out and leaves the main window alone") do
     app.window.rows.first.then do |row|
       row.popout.close_action.activate(nil)
       d.check("only the main window is left") { Gtk::Window.list_toplevels.length == 1 }
       d.check("the main window is still there") { app.window.visible? }
+    end
+  end
+
+  # C4. main.lua:503 reads `searchbar.key_capture_widget = window`, where
+  # `window` at that point in the file is the class table and the window is
+  # `self.window` — so upstream's type-to-search has never worked. The port
+  # assigns the window, and that fix was asserted by nothing. Reading the
+  # property back is half of it; the other half is a real key press, which no
+  # Ruby call can forge (gtk_event_controller_key_forward asserts on a NULL
+  # current event, so emitting "key-pressed" by hand is not a key press), so
+  # xdotool types into the Xvfb display this run is already on. Only the main
+  # window is up at this point, which is what makes `search --name` unambiguous.
+  d.step("the search bar captures keys on the window, not on a class table") do
+    d.check("the capture widget is the window itself") do
+      app.window.search_bar.key_capture_widget.equal?(app.window)
+    end
+    d.check("search mode is closed to start with") do
+      !app.window.search_bar.search_mode_enabled?
+    end
+    d.check("the entry is empty to start with") do
+      app.window.search_bar.search_entry.text.empty?
+    end
+    d.check("xdotool is on PATH to type with") { xdotool("--version") }
+    xdotool("search", "--name", "^Tally$", "windowfocus")
+    xdotool("key", "--clearmodifiers", "a")
+  end
+
+  d.step("typing a letter opened the bar and the letter landed in the entry") do
+    app.window.search_bar.then do |bar|
+      d.check("search mode opened by itself") { bar.search_mode_enabled? }
+      d.check("the header bar's toggle followed it") { app.window.search_button.active? }
+      d.check("the letter was forwarded to the entry") { bar.search_entry.text == "a" }
+      bar.search_entry.text = ""
+      bar.search_mode_enabled = false
+    end
+  end
+
+  # C5. Both scrolling methods were asserted only to answer self, which a
+  # method with an empty body also does. Upstream's counter:scroll goes
+  # through the GtkViewport the ScrolledWindow interposes (main.lua:441-443),
+  # and window:scrollbottom drives the vertical adjustment to its end after a
+  # short delay. The adjustment is set to a scrollable range first, because
+  # two rows in a 500x600 window do not overflow and an adjustment that cannot
+  # move proves nothing.
+  d.step("scrolling reaches the real viewport and moves the real adjustment") do
+    app.window.counter_list.then do |list|
+      d.check("the interposed child is a GtkViewport") do
+        list.viewport.is_a?(Gtk::Viewport)
+      end
+      d.check("and it is the ScrolledWindow's own child") do
+        list.viewport.equal?(list.child)
+      end
+      d.check("scrolling a row into view answers the list") do
+        list.scroll_into_view(app.window.rows.first).equal?(list)
+      end
+      list.vadjustment.tap do |adjustment|
+        adjustment.lower = 0.0
+        adjustment.upper = 1000.0
+        adjustment.page_size = 100.0
+        adjustment.value = 0.0
+      end
+      d.check("the adjustment starts at the top") { list.vadjustment.value.zero? }
+      list.scroll_to_bottom
+      pump(Tally::CounterList::BOTTOM_DELAY_MS + 200)
+      d.check("the queued scroll drove it to the end") do
+        list.vadjustment.value == list.vadjustment.upper - list.vadjustment.page_size
+      end
+      d.check("which is as far down as it goes") do
+        list.vadjustment.value + list.vadjustment.page_size >= list.vadjustment.upper
+      end
+    end
+  end
+
+  # C3. Store#queue_write's one-second debounce, upstream's lib.queuewrite
+  # (main.lua:143-154). Every other on-disk assertion in this driver calls
+  # Store#write outright, and the only queue_write ever observed was the
+  # negative one — a store refusing to arm. A queue_write that armed nothing
+  # would have left all of this green while losing every edit made with the
+  # spin button.
+  d.step("spinning a counter arms a write without performing one") do
+    Tally::Store.default.then do |store|
+      store.write
+      app.window.rows.first.then do |row|
+        row.spin_button.value = 97
+        d.check("the spin button moved the counter") { row.counter.value == 97 }
+        d.check("the file still has the number from before") do
+          !File.read(store.path).include?("97")
+        end
+        d.check("nothing called #write in between") do
+          JSON.parse(File.read(store.path))["counters"]
+            .find { |entry| entry["name"] == "Espresso" }["value"] != 97
+        end
+      end
+    end
+  end
+
+  d.step("the debounce writes it a second later with nothing else asked") do
+    pump(Tally::Store::DEBOUNCE_MS + 400)
+    Tally::Store.default.then do |store|
+      d.check("the queued write landed on disk") { File.read(store.path).include?("97") }
+      d.check("and it is the counter's own value") do
+        JSON.parse(File.read(store.path))["counters"]
+          .find { |entry| entry["name"] == "Espresso" }["value"] == 97
+      end
+    end
+  end
+
+  # C1. main.lua:508-514: the main window's close-request closes every
+  # pop-out, so none of them keeps the application alive once the window the
+  # user closed is gone. Nothing drove this before — the failure it hides is a
+  # process that never exits.
+  d.step("two pop-outs are opened for the close-request check") do
+    app.window.rows.each(&:show_popout)
+  end
+
+  d.step("close-request on the main window closes every pop-out") do
+    d.check("three toplevels are up") { Gtk::Window.list_toplevels.length == 3 }
+    d.check("both rows have one") { app.window.rows.all? { |row| row.popout.visible? } }
+    d.check("the handler does not veto the close") do
+      app.window.signal_emit("close-request") == false
+    end
+    d.check("only the closing window is left") { Gtk::Window.list_toplevels.length == 1 }
+    d.check("and that one is the main window") do
+      Gtk::Window.list_toplevels.first.equal?(app.window)
+    end
+    d.check("which is still up") { app.window.visible? }
+  end
+
+  # C6. main.lua:830-832 — on_shutdown writes the config outright, so a quit
+  # inside the one-second debounce still saves. The word shutdown did not
+  # appear in this driver at all. A second application object with its own
+  # scratch store is used rather than the running one, so emitting the signal
+  # cannot tear down the run.
+  d.step("shutdown writes the config, so a quit inside the debounce still saves") do
+    Dir.mktmpdir("tally-shutdown").then do |dir|
+      Tally::Store.new(dir: dir).then do |store|
+        Tally::Application.new(store: store, devel: false).build.then do |application|
+          d.check("the scratch store has no file yet") { !File.exist?(store.path) }
+          application.signal_emit("shutdown")
+          d.check("shutdown wrote one") { File.exist?(store.path) }
+          d.check("carrying every counter in memory, in order") do
+            JSON.parse(File.read(store.path))["counters"].map { |entry| entry["name"] } ==
+              Tally::Counter.counters.map(&:name)
+          end
+          d.check("and their values") do
+            JSON.parse(File.read(store.path))["counters"].map { |entry| entry["value"] } ==
+              Tally::Counter.counters.map(&:value)
+          end
+        end
+      end
     end
   end
 

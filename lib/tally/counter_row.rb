@@ -278,12 +278,8 @@ module Tally
         @list&.refresh_visibility
       end
 
-      # gdk_content_provider_new_for_value is not bound under that name; the
-      # Ruby constructor takes the GLib::Value directly
-      # (Gdk::ContentProvider#initialize(value: interface(GLib::Value))). The
-      # value has to be typed as the gtype #drop_target was created with, or
-      # the provider advertises a format the target never accepts and the drop
-      # is silently refused.
+      # The GLib::Value goes straight to the constructor, typed as the gtype
+      # #drop_target was created with. FINDINGS.md B4.
       def prepare_drag(pointer_x, pointer_y)
         @drag_x = pointer_x
         @drag_y = pointer_y
@@ -317,12 +313,8 @@ module Tally
         end
       end
 
-      # GtkDropTarget::drop hands its handler a GValue, and the Ruby bindings
-      # pass that through as a GLib::Value rather than unboxing it to the
-      # widget inside — so the row has to be taken out of it. Unwrapping first
-      # is what makes the type test below mean anything: tested against the
-      # GLib::Value it never matched, and every drag-to-reorder was refused
-      # without a sound.
+      # The row has to come out of the GLib::Value before the type test below
+      # can mean anything. FINDINGS.md B5.
       def accept_drop(value)
         dropped(value).then do |row|
           if row.is_a?(Gtk::ListBoxRow)

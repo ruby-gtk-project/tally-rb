@@ -20,13 +20,10 @@ module Tally
   # this port ships both sets as plain files and adds data/icons to the icon
   # theme's search path instead. The layout is deliberately a hicolor theme
   # tree — data/icons/hicolor/{index.theme,scalable/actions,scalable/apps,
-  # symbolic/apps} — because a bare gtk_icon_theme_add_search_path only finds
-  # icons sitting flat in the directory or inside a named theme below it: the
-  # "scalable/actions" subdirectory a GResource base path implies is *not* one
-  # of the places a file search path is searched, so the earlier
-  # data/icons/scalable/actions layout resolved nothing at all. It also means
-  # the same directory can be copied straight into share/icons by a package,
-  # which is what flake.nix does.
+  # symbolic/apps} — because a file search path does not search the
+  # "scalable/actions" subdirectory a GResource base path implies: FINDINGS.md
+  # B7. It also means the same directory can be copied straight into
+  # share/icons by a package, which is what flake.nix does.
   class Icons
     DIR = File.expand_path("../../data/icons", __dir__)
     THEME = "hicolor"
@@ -86,8 +83,7 @@ module Tally
         .merge(APP_NAMES.to_h { |name, subdir| [name, path_for(name, subdir)] })
     end
 
-    # gtk_icon_theme_get_for_display is bound as `for_display` in recent
-    # ruby-gnome and as `get_for_display` in older releases.
+    # Either name, depending on the ruby-gnome release. FINDINGS.md B6.
     def icon_theme
       @icon_theme ||= theme_for(Gdk::Display.default)
     end

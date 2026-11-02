@@ -44,11 +44,12 @@ module Tally
       end
     end
 
-    def spin_button
-      @spin_button ||= Gtk::SpinButton.new(adjustment, 1.0, 0).tap do |spin|
-        spin.valign = :center
-      end
-    end
+    # No valign, deliberately. counter.lua:471-473 builds the preview's
+    # spinner with Gtk.SpinButton.new_with_range(0, 1000000, 1) and sets
+    # nothing else on it, where the real row's spin button is given CENTER
+    # (counter.lua:48-50) — so upstream's drag icon shows a full-height spin
+    # button and this one does too.
+    def spin_button = @spin_button ||= Gtk::SpinButton.new(adjustment, 1.0, 0)
 
     def adjustment
       @adjustment ||= Gtk::Adjustment.new(

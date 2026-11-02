@@ -1,5 +1,16 @@
 # Test parity — tally / tally-rb
 
+> **Superseded in part — read this first.** All seven coverage gaps C1–C7 are
+> closed on `ruby` since this was written. The driver is **289 checks across
+> 77 steps** (`nix develop --command xvfb-run -a ruby test/drive_tally.rb` →
+> **289 of 289 checks passed, DRIVE OK**) and the specs are **83 examples, 0
+> failures** via the new `rake check`, which also runs `msgfmt -c` over every
+> catalogue and the extraction check. The 214/62 figures below are that
+> audit's and have not been re-derived. What has *not* changed is the finding
+> this report exists for: upstream has no tests, so parity is 0/0 and the port
+> inherits no safety net — every property pinned was chosen by the port's own
+> author.
+
 |  |  |
 |---|---|
 | Upstream | `origin/trunk` @ `e9986b010c950d2df91b682769b744c412348e0c` |

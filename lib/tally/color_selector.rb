@@ -21,6 +21,14 @@ module Tally
   #   ticked, and gives the first one the "system" class, which the light and
   #   dark sheets paint solid white and solid black respectively.
   #
+  # Vertical alignment is the third per-site difference, and it is an argument
+  # rather than something this class decides. Only counter:colorrow
+  # (counter.lua:201-207) sets valign = "CENTER"; searchcolorbox
+  # (main.lua:317-321) and tallycolorbox (main.lua:567-571) set no alignment at
+  # all, so upstream's search bar and new-counter dialog lay the 28x28px checks
+  # out at GTK's default FILL. DEFAULT_VALIGN is that default, written down so
+  # the two sites that want it can be seen to have asked for nothing.
+  #
   # Upstream's notify::active handlers fire on deactivation too, so switching
   # from red to blue runs setcolor("red") before setcolor("blue") and only
   # lands on the right answer because GTK deactivates the outgoing button
@@ -28,16 +36,20 @@ module Tally
   class ColorSelector < Gtk::Box
     SPACING = 6
 
+    # Gtk::Widget's own default, which is what upstream's two unaligned copies
+    # of this box get.
+    DEFAULT_VALIGN = :fill
+
     attr_reader :mode, :checks
 
-    def initialize(mode: :radio, selected: nil, &on_change)
+    def initialize(mode: :radio, selected: nil, valign: DEFAULT_VALIGN, &on_change)
       super(:horizontal, SPACING)
       @mode = mode
       @selected = Colors.key(selected)
       @on_change = on_change
       @checks = {}
       add_css_class("colorselector")
-      self.valign = :center
+      self.valign = valign
     end
 
     def build

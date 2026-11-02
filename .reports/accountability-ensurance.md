@@ -1,5 +1,21 @@
 # Accountability ensurance — tally-rb
 
+> **Superseded in part — read this first.** Finding 15 is closed:
+> `FINDINGS.md` exists on `ruby` with nine ruby-gnome binding defects (B1–B9)
+> and the six upstream defects (U1–U6), each naming the symptom, the versions
+> it was seen on (ruby-gnome 4.3.9, GTK 4.22.4, libadwaita 1.9.3, Ruby 3.4.9)
+> and the file and method of the workaround; the inline comments are shortened
+> to point at it. Finding 16's axis is covered — C7 reads roughly twenty
+> alignments, margins and spacings off the widgets that carry them — and the
+> two divergences it was about are fixed. Finding 17's six claims are in
+> `FINDINGS.md` as U1–U6 and `key_capture_widget` is driven by a real key
+> press, but **none of the three user-visible upstream bugs has been reported
+> upstream**, which this session cannot do. Finding 14 now has a mechanism
+> rather than a resolution: `rake check` runs the specs, the catalogue lint and
+> the extraction check in one target. The figures below (214 checks, 62 steps)
+> are this audit's; the session that closed the findings ran **289 of 289
+> checks passed, DRIVE OK** across 77 steps and **83 examples, 0 failures**.
+
 |  |  |
 |---|---|
 | Upstream | `origin/trunk` @ `e9986b010c950d2df91b682769b744c412348e0c` |

@@ -153,8 +153,7 @@ module Tally
 
     def run(argv = []) = app.run(argv)
 
-    # Adwaita::Application is unusable from the Ruby bindings; the application
-    # object comes from Gtk and only the windows are Adwaita.
+    # Gtk, not Adwaita: Adwaita::Application is unusable from Ruby. FINDINGS.md B1.
     def app = @app ||= Gtk::Application.new(application_id, :default_flags)
 
     # The single window. Built on first use, which is upstream's uniqueness

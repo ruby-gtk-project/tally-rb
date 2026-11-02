@@ -1,5 +1,16 @@
 # Component parity — tally / tally-rb
 
+> **Superseded in part — read this first.** Gaps 1 and 2 of this audit are
+> closed on `ruby` since it was written: `ColorSelector` takes `valign:` as a
+> per-call-site argument defaulting to GTK's `FILL` and only `CounterMenu`
+> passes `:center` (`counter.lua:201-207`), and `CounterDragRow#spin_button`
+> sets no alignment at all (`counter.lua:471-473`). Both are now read back off
+> the widget by the driver. The figures below — 19/22, 214 checks across 62
+> steps — are the figures of *that* audit and have not been re-derived; the run
+> in the session that closed the gaps was **289 of 289 checks passed, DRIVE
+> OK**, 77 steps. Gap 3, nothing having been compared against upstream
+> running, is untouched and is the one open component gap.
+
 |  |  |
 |---|---|
 | Upstream | `origin/trunk` @ `e9986b010c950d2df91b682769b744c412348e0c` |

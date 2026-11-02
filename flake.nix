@@ -220,6 +220,13 @@
             # it can start itself: `xvfb-run ruby exe/tally` both launches the
             # app and is how test/drive_tally.rb is run.
             pkgs.xvfb-run
+            # test/drive_tally.rb types a letter into the running app to prove
+            # the search bar's key capture is wired to the window. GTK4 has no
+            # public way to forge a Gdk key event — gtk_event_controller_key_forward
+            # asserts on a NULL current event, so emitting "key-pressed" by
+            # hand is not a key press — so the keystroke has to come from the
+            # X server, and xdotool is what puts it there.
+            pkgs.xdotool
           ] ++ gtkStack;
 
           # Icons, GSettings schemas and the GTK portal all resolve through
@@ -238,6 +245,7 @@
             echo "drive the app: xvfb-run ruby test/drive_tally.rb"
             echo "run the specs: ruby -e 'require \"rspec/core\"; exit RSpec::Core::Runner.run([\"--format\", \"progress\", \"--require\", \"spec_helper\", \"spec\"])'"
             echo "catalogues:    rake pot && rake po && rake pot:check"
+            echo "check it all:  rake check   (specs + msgfmt -c lint + extraction check)"
           '';
         };
       });

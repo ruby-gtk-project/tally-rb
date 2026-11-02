@@ -27,9 +27,9 @@ msgstr "Terjemahkan aplikasi ini!"
 msgid "Support this app!"
 msgstr "Terjemahkan aplikasi ini!"
 
-#: ../lib/tally/about_dialog.rb:47 ../lib/tally/counter_window.rb:100
-#: ../lib/tally/counter_window.rb:215 ../lib/tally/main_window.rb:50
-#: ../lib/tally/main_window.rb:110
+#: ../lib/tally/about_dialog.rb:47 ../lib/tally/counter_window.rb:102
+#: ../lib/tally/counter_window.rb:217 ../lib/tally/main_window.rb:50
+#: ../lib/tally/main_window.rb:111
 msgid "Tally"
 msgstr "Penghitung"
 
@@ -81,40 +81,40 @@ msgstr "Name"
 msgid "Color"
 msgstr "Warna"
 
-#: ../lib/tally/counter_menu.rb:80
+#: ../lib/tally/counter_menu.rb:84
 msgid "Reorder in List"
 msgstr ""
 
-#: ../lib/tally/counter_menu.rb:101
+#: ../lib/tally/counter_menu.rb:105
 msgid "Move counter to the top of the current list"
 msgstr "Pindahkan penghitung ke baris teratas pada list ini"
 
-#: ../lib/tally/counter_menu.rb:108
+#: ../lib/tally/counter_menu.rb:112
 msgid "Move counter to just above the previous row"
 msgstr "Pindahkan penghitung ke tepat di atas baris sebelumnya"
 
-#: ../lib/tally/counter_menu.rb:115
+#: ../lib/tally/counter_menu.rb:119
 msgid "Move counter to just below the next row"
 msgstr "Pindahkan penghitung ke tepat di bawah baris selanjutnya"
 
-#: ../lib/tally/counter_menu.rb:122
+#: ../lib/tally/counter_menu.rb:126
 msgid "Move counter to the bottom of the current list"
 msgstr "Pindahkan penghitung ke baris terbawah pada list ini"
 
-#: ../lib/tally/counter_menu.rb:128
+#: ../lib/tally/counter_menu.rb:132
 #, fuzzy
 msgid "Show in a Separate Window"
 msgstr "Tampilkan di jendela terpisah"
 
-#: ../lib/tally/counter_menu.rb:136
+#: ../lib/tally/counter_menu.rb:140
 msgid "Create a new window for this counter"
 msgstr "Buat jendela baru untuk penghitung ini"
 
-#: ../lib/tally/counter_window.rb:121
+#: ../lib/tally/counter_window.rb:123
 msgid "Decrement by 1"
 msgstr "Kurangi 1"
 
-#: ../lib/tally/counter_window.rb:127
+#: ../lib/tally/counter_window.rb:129
 msgid "Increment by 1"
 msgstr "Tambahkan 1"
 
@@ -136,23 +136,23 @@ msgstr "Pintasan Keyboard"
 msgid "About Tally"
 msgstr "Tentang Penghitung"
 
-#: ../lib/tally/main_window.rb:117
+#: ../lib/tally/main_window.rb:118
 msgid "Create a new counter"
 msgstr "Buat penghitung baru"
 
-#: ../lib/tally/main_window.rb:125
+#: ../lib/tally/main_window.rb:126
 msgid "Delete selected counters"
 msgstr "Hapus penghitung yang dipilih"
 
-#: ../lib/tally/main_window.rb:134 ../lib/tally/main_window.rb:297
+#: ../lib/tally/main_window.rb:135 ../lib/tally/main_window.rb:297
 msgid "Select counters to delete"
 msgstr "Pilih penghitung yang akan dihapus"
 
-#: ../lib/tally/main_window.rb:141
+#: ../lib/tally/main_window.rb:142
 msgid "Filter counters by name and/or color"
 msgstr "Saring penghitung berdasarkan nama dan/atau warna"
 
-#: ../lib/tally/main_window.rb:149
+#: ../lib/tally/main_window.rb:150
 msgid "Menu"
 msgstr "Menu"
 

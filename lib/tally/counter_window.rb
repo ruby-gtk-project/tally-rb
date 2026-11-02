@@ -19,6 +19,8 @@ module Tally
   # updating and edits stop being saved for as long as the pop-out exists. This
   # port routes both windows through the Counter instead: the buttons move
   # Counter#value, and both the row and this window listen for the change.
+  # FINDINGS.md U1. The devel class is passed in rather than read off a global,
+  # which is upstream's other bug here: FINDINGS.md U4.
   class CounterWindow < Adwaita::ApplicationWindow
     include Gettext
 

@@ -31,6 +31,22 @@ module TallyGettext
   # is meaningless, and msgmerge supplies each catalogue's own.
   DATE_LINES = /^"(?:POT-Creation-Date|PO-Revision-Date):.*\n/
 
+  # rxgettext is not in this project's bundle and does not need to be — it
+  # is a tool, not a dependency, and the devShell puts it on PATH. But rake
+  # runs inside the bundle, and three environment variables make the child
+  # process join it: RUBYOPT carries `-rbundler/setup`, BUNDLE_GEMFILE names
+  # the bundle, and BUNDLER_SETUP is re-required by rubygems itself before
+  # the script even starts. Inheriting any of them makes rxgettext fail with
+  # "can't find executable rxgettext for gem gettext" or with a platform
+  # complaint about this repository's own Gemfile.lock, so all three are
+  # cleared. GEM_PATH is deliberately kept: that is where the gem lives.
+  UNBUNDLED = {
+    "RUBYOPT"         => nil,
+    "BUNDLER_SETUP"   => nil,
+    "BUNDLE_GEMFILE"  => nil,
+    "BUNDLE_BIN_PATH" => nil,
+  }.freeze
+
   class << self
     # lib/ and exe/, which is every file that can hold a call site. exe/ is
     # listed with a bare glob because its launcher has no extension.
@@ -63,21 +79,6 @@ module TallyGettext
         .then { |mod| mod::Tally::Rb::Version::VERSION }
     end
 
-    # rxgettext is not in this project's bundle and does not need to be — it
-    # is a tool, not a dependency, and the devShell puts it on PATH. But rake
-    # runs inside the bundle, and three environment variables make the child
-    # process join it: RUBYOPT carries `-rbundler/setup`, BUNDLE_GEMFILE names
-    # the bundle, and BUNDLER_SETUP is re-required by rubygems itself before
-    # the script even starts. Inheriting any of them makes rxgettext fail with
-    # "can't find executable rxgettext for gem gettext" or with a platform
-    # complaint about this repository's own Gemfile.lock, so all three are
-    # cleared. GEM_PATH is deliberately kept: that is where the gem lives.
-    UNBUNDLED = {
-      "RUBYOPT"         => nil,
-      "BUNDLER_SETUP"   => nil,
-      "BUNDLE_GEMFILE"  => nil,
-      "BUNDLE_BIN_PATH" => nil,
-    }.freeze
 
     def extract(into)
       into.tap do |target|
@@ -138,5 +139,36 @@ task po: :pot do
       TallyGettext::POT_FILE,
       exception: true,
     )
+  end
+end
+
+# The third of upstream's Makefile rules — `msgfmt -o locale/%/LC_MESSAGES/
+# messages.mo` — does not carry over as a build step, because Tally::Locale
+# reads po/*.po directly and there is no .mo to compile. What does carry over
+# is the *validation* msgfmt does on the way: a catalogue with a broken escape,
+# a format specifier the msgid does not have, or a malformed header is a
+# catalogue that would have failed upstream's build and passes silently here.
+#
+# Templates are excluded deliberately. po/MESSAGES.pot carries rxgettext's
+# placeholder plural-forms line, which msgfmt rejects as an invalid nplurals
+# value; that is correct for a template and tells us nothing about the
+# translations.
+desc "Validate every catalogue in po/ with msgfmt -c"
+task "po:lint" do
+  TallyGettext.catalogues.then do |catalogues|
+    if catalogues.empty?
+      abort("no catalogues in po/ — something has gone wrong with the checkout.")
+    end
+    catalogues.each do |catalogue|
+      system(
+        "msgfmt",
+        "--check",
+        "--check-format",
+        "--output-file=#{File::NULL}",
+        catalogue,
+        exception: true,
+      )
+      puts "#{catalogue} is valid."
+    end
   end
 end

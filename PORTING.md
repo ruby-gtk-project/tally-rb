@@ -7,7 +7,8 @@ in `.reports/`.
 |---|---|
 | Upstream spec | `origin/trunk` @ `e9986b010c950d2df91b682769b744c412348e0c` |
 | Port branch | `ruby` |
-| Last audit | `2f14cbb` — **3 open gaps + 7 coverage gaps + 5 accountability findings**, clean = false |
+| Last audit | `2f14cbb` — 3 open gaps + 7 coverage gaps + 5 accountability findings |
+| Since then | 2 component gaps, all 7 coverage gaps, the `msgfmt -c` row and `FINDINGS.md` closed — **1 open gap + 2 translation items + 3 accountability findings**, clean = false |
 
 ## Upstream
 
@@ -65,14 +66,20 @@ stylesheet is upstream's three heredocs transcribed verbatim, identical modulo
 indentation; 41 code msgids and 23 metadata msgids are byte-identical in both
 directions; all three languages reach the screen.
 
-Runs, all performed for that audit and none transcribed from a previous one:
+Runs, every one performed in the session that wrote this table and none
+transcribed from a previous copy:
 
 | Command | Result |
 |---|---|
-| `nix develop --command xvfb-run -a ruby test/drive_tally.rb` | **214 of 214 checks passed, DRIVE OK** (62 steps, 15 shots) |
-| `nix develop --command ruby -e '…RSpec…'` | **83 examples, 0 failures** |
-| `nix develop --command rake pot:check` | `po/MESSAGES.pot` is up to date |
-| `LANGUAGE=fr` / `it` / `id`, window built headless | `Compteur` / `Contatore` / `Penghitung` |
+| `nix develop --command xvfb-run -a ruby test/drive_tally.rb` | **289 of 289 checks passed, DRIVE OK** (77 steps, 15 shots) |
+| `nix develop --command rake check` | **83 examples, 0 failures**; `po/{fr,id,it}.po` valid; `po/MESSAGES.pot` up to date |
+| `nix develop --command rake pot` | 41 msgids |
+
+`rake check` is new and is the mechanical half of Finding 14: it runs the
+specs, `msgfmt -c` over every catalogue and the extraction check in one target,
+so a report cannot quote a green suite that was never run. The driver is
+deliberately outside it — it needs a display — and the target prints the
+command for it.
 
 ## Not started
 
@@ -85,83 +92,95 @@ went on listing them as absent for two commits. That is Finding 1 of
 
 ## Open gaps
 
-3 component gaps, 7 coverage gaps and 5 accountability findings across the
+1 component gap, 0 coverage gaps and 3 accountability findings across the
 parity reports in `.reports/`; **clean = false**.
 
-`.reports/component-parity.md` — 3:
+Closed this round, each with the command that shows it: the two alignment
+divergences (`ColorSelector` now takes `valign:` per call site and
+`CounterDragRow`'s preview spin button takes none, both read back off the
+widget by the driver), all seven coverage gaps C1–C7 (the driver went from 214
+checks across 62 steps to **289 across 77**), the `msgfmt -c` half of the
+translation row (`rake po:lint`, inside `rake check`), and `FINDINGS.md`.
 
-1. `lib/tally/color_selector.rb:40` sets `valign = :center` in the
-   constructor, so it applies at all three call sites. Upstream sets it only at
-   `counter:colorrow` (`counter.lua:201-207`); `searchcolorbox`
-   (`main.lua:317-321`) and `tallycolorbox` (`main.lua:567-571`) set none, so
-   upstream's are `FILL`. `valign` needs to become a per-site argument.
-2. `lib/tally/counter_drag_row.rb:49` sets `valign = :center` on the drag
-   preview's spin button; `counter.lua:471-473` sets nothing on it.
-3. Nothing has been compared against upstream *running*. Upstream is a
-   Flatpak-only Lua app and has not been built here, so every "looks the same"
-   claim rests on reading two source trees and on 15 screenshots of the port
-   alone.
+`.reports/component-parity.md` — 1:
+
+1. Nothing has been compared against upstream *running*. Upstream is a
+   Flatpak-only Lua app (flatpak-builder over `ca.vlacroix.Tally.json`,
+   building Lua 5.4 and LuaGObject from source inside `org.gnome.Sdk`) and has
+   not been built here, so every "looks the same" claim still rests on reading
+   two source trees and on 15 screenshots of the port alone.
 
 `.reports/test-parity.md` — parity is **0/0**, met trivially: upstream has no
 test suite at all (census empty, no `test/` directory, no test target in the
 `Makefile`, no test job in its CI). The port therefore **inherits no safety
-net** — not one check in it was written from an upstream test. Seven coverage
-gaps against the port's own suites, each a behaviour the port builds and no
-check exercises:
+net** — not one check in it was written from an upstream test, and the seven
+coverage gaps below were the port's own, not upstream's. All seven are closed:
 
-4. C1 — the main window's `close-request` closing every pop-out.
-5. C2 — the About dialog's two translatable link labels and its `copyright`,
-   `developer_name`, `license_type`, `website` and `translator_credits`.
-6. C3 — `Store#queue_write`'s one-second debounce ever actually writing; only
-   the refusal path is driven.
-7. C4 — `search_bar.key_capture_widget`, which is the one thing upstream
-   gets wrong (`main.lua:503` assigns the class table, not the window).
-8. C5 — `scroll_into_view` and `scroll_to_bottom` are asserted to return,
-   not to scroll.
-9. C6 — `Application#shutdown` writing the config.
-10. C7 — **no check in the driver reads a `valign`, `halign`, `margin_*` or
-    `spacing` off any widget**, which is how gaps 1 and 2 above sat inside a
-    green run for two commits.
+- C1 — `close-request` closing every pop-out: two pop-outs are opened, the
+  signal is emitted, and `Gtk::Window.list_toplevels` is asserted down to the
+  closing window.
+- C2 — the About dialog's `copyright`, `developer_name`, `license_type`,
+  `website`, `translator_credits` and `issue_url` against upstream's literals,
+  and both `add_link` labels found by walking the presented dialog.
+- C3 — `Store#queue_write`'s debounce: a counter is spun, the file is asserted
+  *not* to carry the new number, the loop is pumped past 1000 ms, and the file
+  is read back without `#write` ever being called.
+- C4 — `key_capture_widget` is asserted to be the window, and a real key press
+  is delivered by `xdotool` into the Xvfb display the run is on, because no
+  Ruby call can forge a Gdk event (`FINDINGS.md` B9). Search mode opens and the
+  letter lands in the entry.
+- C5 — `viewport` is asserted to be the `Gtk::Viewport` the ScrolledWindow
+  interposes, and `scroll_to_bottom` is observed driving the adjustment to its
+  end after a pump.
+- C6 — `shutdown` is emitted on an application with a scratch store, and the
+  file is asserted to match the in-memory counters name for name and value for
+  value.
+- C7 — roughly twenty alignments, margins and spacings, each cited to the
+  upstream line that sets it, read back off the widget that carries it. This is
+  the axis gaps 1 and 2 lived on.
 
-`.reports/translation-parity.md` — parity **holds**: 41/41 messages, 51/51
-occurrences, 23/23 metadata messages, 3/3 languages, 0 gaps, 0 extra, verified
-on screen in all three. Two open items, neither a parity gap:
+`.reports/translation-parity.md` — parity **holds**: 41/41 messages, 23/23
+metadata messages, 3/3 languages, 0 gaps, 0 extra. Two open items, neither a
+parity gap:
 
-11. The port has **no gettext domain and no `.mo`** — `Tally::Locale` reads
-    `po/*.po` at runtime. Delivery works; `msgfmt -c` validation, plural forms,
-    `msgctxt` and the `LC_MESSAGES` lookup path do not exist.
-12. Seven msgids are English in all three languages (`Add to List`,
-    `Create Counter`, `New Counter`, `No Counters`, `Reorder in List`,
-    `Show in a Separate Window`, `Support this app!`). Upstream shows the same
-    seven in English, because its `po/MESSAGES.pot` is dated 2025-06-21 and
-    four of the seven were renamed after that. The fix is an upstream issue and
-    **it has not been filed**.
+2. Seven msgids are English in all three languages (`Add to List`,
+   `Create Counter`, `New Counter`, `No Counters`, `Reorder in List`,
+   `Show in a Separate Window`, `Support this app!`). Upstream shows the same
+   seven in English, because its `po/MESSAGES.pot` is dated 2025-06-21 and four
+   of the seven were renamed after that. The fix is an upstream issue and
+   **it has not been filed** — this session has no way to file one.
+3. All 23 project-metadata msgids reach no catalogue in either project:
+   upstream's `Makefile` extracts from `*.lua` and `*.c` only, and neither
+   project's `.desktop` or `.metainfo.xml` is a `.in` template. The port has a
+   POTFILES-completeness check for `lib/` and `exe/` (`rake pot:check`) and
+   none for `data/`. Equal sets, so parity holds; still a real defect, and
+   **not closed**.
 
-`.reports/accountability-ensurance.md` — 5:
+`.reports/accountability-ensurance.md` — 3:
 
-13. This file lied in six places about work that exists (above). Fixed in the
-    same commit as that report; the rule it broke — ledgers regenerate in the
-    commit that moves a row — has now been broken twice.
-14. Five ledgers carried "passes 105 driven checks" through two commits of
-    behaviour without re-running anything. The number is 214.
-15. There is still no `FINDINGS.md`. Six ruby-gnome binding defects are
-    recorded only as inline comments (`application.rb:156-157`,
-    `main_window.rb:183-187`, `styles.rb:234-243`, `counter_row.rb:281-291`
-    and `:320-325`, `icons.rb:21-28` and `:94-100`,
-    `shortcuts_dialog.rb:97-99`), where no gap row can cite them.
-16. The two alignment divergences above survived a second audit, and the axis
-    they live on is unverified (C7).
-17. Six "the port fixes an upstream bug" claims were re-audited and **all six
-    hold**; three of them are genuine upstream bugs with user-visible
-    consequences and **none has been reported upstream**.
+4. This file lied in six places about work that exists, and five ledgers
+   carried "passes 105 driven checks" through two commits of behaviour without
+   re-running anything (Findings 13 and 14). Both are historical now; the rule
+   they broke is enforced by `rake check`, not by a resolution.
+5. The two alignment divergences survived a second audit on an axis no check
+   could see (Finding 16). Fixed, and C7 now covers the axis — but the audit
+   that missed them is the record, not the fix.
+6. Six "the port fixes an upstream bug" claims were re-audited and **all six
+   hold**. They are now written down with their upstream `file:line` in
+   `FINDINGS.md` (U1–U6) rather than living as code comments, and
+   `key_capture_widget` is driven by C4 — but three of them are genuine
+   upstream bugs with user-visible consequences and **none has been reported
+   upstream**.
 
 ## How the port is spelled differently
 
 Not blockers. Every item below is built and driven, and none of it may be
 cited to excuse a gap. These are the places where upstream's mechanism has no direct
 Ruby spelling and the port reaches the same behaviour another way. Each one is
-also a reason some future gap might be *hard*, which is `FINDINGS.md`'s job —
-and `FINDINGS.md` does not exist yet, which is Open gap 15.
+also a reason some future gap might be *hard*, which is `FINDINGS.md`'s job.
+`FINDINGS.md` exists now: nine binding defects (B1–B9) and six upstream defects
+(U1–U6), each with the version it was seen on and the file and line of the
+workaround.
 
 - **No declarative UI to transcribe.** Upstream has no `.ui`, no `.blp` and no
   GSettings schema. Every component was recovered by reading `main.lua` (862

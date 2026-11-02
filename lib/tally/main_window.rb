@@ -82,6 +82,7 @@ module Tally
         end
 
         search_bar.tap do |bar|
+          # The window, not the class table upstream assigns. FINDINGS.md U2.
           bar.key_capture_widget = window
           bar.bind_property(
             "search-mode-enabled",
@@ -181,8 +182,7 @@ module Tally
     end
 
     # Upstream calls Adw.BreakpointCondition.new_length("MAX_WIDTH", 400,
-    # "PX"); the Ruby bindings expose only `parse`, so the same condition is
-    # spelled in the string syntax libadwaita's own parser reads.
+    # "PX"), which Ruby does not bind. FINDINGS.md B2.
     def breakpoint_condition
       Adwaita::BreakpointCondition.parse("max-width: #{BREAKPOINT_WIDTH}px")
     end

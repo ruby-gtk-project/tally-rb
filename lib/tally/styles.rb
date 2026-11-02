@@ -231,9 +231,7 @@ module Tally
         )
       end
 
-      # GTK 4.12 renamed load_from_data to load_from_string; which one the
-      # installed bindings expose depends on the gtk4 gem's vintage, and the
-      # old name is deprecated rather than gone.
+      # Either name, depending on the gtk4 gem's vintage. FINDINGS.md B3.
       def provider(css)
         Gtk::CssProvider.new.tap do |css_provider|
           if css_provider.respond_to?(:load_from_string)
