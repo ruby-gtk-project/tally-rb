@@ -3,193 +3,258 @@
 |  |  |
 |---|---|
 | Upstream | `origin/trunk` @ `e9986b010c950d2df91b682769b744c412348e0c` |
-| Port | `ruby` @ `eb1f26ae78a5584b17c03f2e2a646a9a0051ad54` |
-| Domain | `messages` (upstream: `bindtextdomain("messages", "/app/share/locale")`) |
-| Languages | 3 — `fr`, `id`, `it` |
-| msgids upstream | 43 (`po/MESSAGES.pot`) |
-| msgids in the port | 43 |
-| msgids lost | **0** |
-| Translated strings lost from `po/` | **0** |
-| Translated strings lost elsewhere | **9** |
-| Verdict | **not at parity** — three gaps |
+| Port | `ruby` @ `0dfc40d8db4335c55114b631c8228a60ec804a0f` |
+| Domain | `messages` (upstream `main.c:110`: `bindtextdomain("messages", "/app/share/locale")`; the port reads `po/` directly under the same name) |
+| Upstream messages (live source) | **41** |
+| Port messages | **40** |
+| Ported | 40 |
+| Gaps | **1** |
+| Extra (port keys upstream never had) | 0 |
+| Languages upstream | 3 — `fr`, `id`, `it` |
+| Languages in the port | 3 — `fr`, `id`, `it` |
+| Translated strings upstream | 126 (42 per language, 0 fuzzy, 0 empty) |
+| Translated strings in the port | **99** (33 per language, 4 fuzzy, 3 empty) |
+| Build / extract command | `rake pot`, `rake po`, `rake pot:check` |
+| Verdict | **not at parity — 1 key gap and 18 translated strings that no longer reach the screen** |
 
-## Step 1–2 — the census
+## How these numbers were obtained
 
-Every catalogue is byte-identical, msgid for msgid and msgstr for msgstr.
+`msgid-census.sh` reads Vala, C, blueprint, GtkBuilder, Python, GJS, Rust and
+Ruby markers. It does **not** read Lua's parenthesis-free call syntax, which is
+how `main.lua` and `counter.lua` write every single one of their strings:
 
-```
-$ for f in MESSAGES.pot fr.po id.po it.po; do
-    diff <(git show origin/trunk:po/$f | grep '^msgid')  <(grep '^msgid'  po/$f)
-    diff <(git show origin/trunk:po/$f | grep '^msgstr') <(grep '^msgstr' po/$f)
-  done
-(no output)
-```
-
-| File | Upstream msgids | Port msgids | Diff |
-|---:|---:|---:|---:|
-| `po/MESSAGES.pot` | 43 | 43 | 0 |
-| `po/fr.po` | 43 | 43 | 0 |
-| `po/id.po` | 43 | 43 | 0 |
-| `po/it.po` | 43 | 43 | 0 |
-
-No fuzzy entries, no obsolete `#~` entries, no plural forms, no `msgctxt`
-anywhere in the set, and no CRLF file. All four files are packaged into the gem
-(`po/**/*` in `spec.files`, via `.structuredmerge/kettle-jem.yml`). The
-domain is preserved: `Locale::DOMAIN = "messages"`.
-
-So on the axis this ledger exists to measure — did the catalogues survive — the
-port is clean. The three gaps are all about strings that live, or should live,
-*outside* `po/`.
-
-## Gap 1 — the desktop entry's translations were dropped entirely
-
-Upstream's `ca.vlacroix.Tally.desktop` carries its own translations, outside
-gettext, in the AppStream/XDG `Key[lang]` form. The port has no `.desktop` file
-at all (`component-parity.md` gap 2), so all of it is gone:
-
-| Key | `fr` | `id` | `it` |
-|---|---|---|---|
-| `Name` | `Compteur` | `Penghitung` | `Contatore` |
-| `Comment` | `Compter tout` | `Hitung apapun` | `Conta qualsiasi cosa` |
-| `Keywords` | `tally;compteur;compteur manuel;` | `tally;penghitung;hitung;` | `tally;contatore;conteggio;contatore manuale;` |
-
-**Nine translated values across three languages**, plus the three `[en]`
-variants and the three untagged defaults. These are the only strings a user
-sees before the app starts — the launcher name, the launcher tooltip and the
-search keywords — so losing them means a French user searching "compteur"
-cannot find the app, and the app's own name in the overview is English.
-
-There is a second `.desktop` upstream (`ca.vlacroix.Tally.Devel.desktop`) with
-the same payload; it is also absent.
-
-Fix: write the desktop entry (both variants) with all four language variants of
-`Name`, `Comment` and `Keywords` byte-identical to upstream's, and install it
-from the gemspec and `flake.nix`.
-
-`ca.vlacroix.Tally.metainfo.xml` was checked for the same problem and is
-clean — it carries zero `xml:lang` attributes, so the missing metainfo file
-(`component-parity.md` gap 3) costs no translations.
-
-## Gap 2 — seven strings the port marks for translation have no msgid
-
-Every `_()` call site in the port was checked against the catalogue. Seven
-cannot resolve, in any language, ever:
-
-```
-$ grep -ohE '_\("([^"]*)"\)' -r lib exe | sed 's/^_("//; s/")$//' | sort -u \
-  | while read s; do grep -qxF "msgid \"$s\"" po/MESSAGES.pot || echo "$s"; done
+```lua
+local _ = lib.gettext
+title = _ "Reorder in List"
 ```
 
-| String | Port site | What `po/MESSAGES.pot` has instead |
-|---|---|---|
-| `Add to List` | `new_counter_dialog.rb:99` | `Add to list` — lowercase `l` |
-| `Show in a Separate Window` | `counter_menu.rb:128` | `Show in a separate window` — lowercase `s`, `w` |
-| `Support this app!` | `about_dialog.rb:32` | `Send a tip!` — a different string entirely |
-| `Reorder in List` | `counter_menu.rb:80` | nothing |
-| `New Counter` | `new_counter_dialog.rb:30` | nothing |
-| `No Counters` | `empty_state.rb:20` | nothing |
-| `Create Counter` | `empty_state.rb:35` | nothing |
+Run as shipped, the census finds 18 keys in the upstream tree — all of them
+from `po/`, none from the source — and one `!unresolved` row for `main.c`'s
+`gettext(msgid)` wrapper. **Report this to the skill**: a Lua upstream reads as
+having almost no translatable strings, and a ledger written from that number
+would conclude the port invented 38 messages. The upstream side below was
+censused by hand with
 
-All seven render correctly in English and silently in English in `fr`, `id`
-and `it`. The pop-out row, the reorder row, the empty state and the new-counter
-dialog title are therefore untranslatable, and the About dialog's second link
-is too.
-
-**This defect is inherited, not invented.** Upstream's `po/MESSAGES.pot` is
-stale against its own source: `main.lua` and `counter.lua` say
-`_"Show in a Separate Window"`, `_"Add to List"`, `_"Support this app!"`,
-`_"Reorder in List"`, `_"New Counter"`, `_"No Counters"` and
-`_"Create Counter"`, and the pot — last regenerated before those strings were
-reworded — does not. The port copied the pot verbatim, which was the right
-call for the 43 that are there, and inherited the mismatch for these seven.
-
-It is still a gap, for two reasons.
-
-First, the ledger does not get to be clean because upstream is also broken: a
-reader of this file needs to know these seven labels do not translate, and
-"upstream's fault" does not change what the user sees.
-
-Second, and this is the part that is the port's own: **there is no mechanism by
-which this would ever be noticed here.** Upstream at least has
-`po/MESSAGES.pot: $(LSRCS) $(CSRCS)` running `xgettext` in its `Makefile`, so
-one `make po/MESSAGES.pot` regenerates the pot and the drift appears in `git
-diff`. The port has no such target anywhere — see gap 3 — so the pot is now a
-frozen artefact that nothing can update and nothing compares against the
-source. The inherited bug has become permanent.
-
-Fix, in this order:
-1. Add the extraction task (gap 3).
-2. Run it, which adds the seven missing msgids and reveals `Add to list`,
-   `Show in a separate window` and `Send a tip!` as obsolete.
-3. `msgmerge` the three catalogues so translators are asked for the seven.
-   **Do not** reword the port's labels down to the stale pot's bytes — the
-   source strings in `main.lua`/`counter.lua` are the canonical ones and the
-   port matches them exactly today.
-
-## Gap 3 — there is no way to regenerate the pot or merge the catalogues
-
-Upstream's `Makefile`:
-
-```make
-po/MESSAGES.pot: $(LSRCS) $(CSRCS)
-	xgettext --from-code utf-8 -o $@ $^
-
-po/%.po: $(POTFILE)
-	[ -f $@ ] || msginit -i $< -o $@ -l $(patsubst po/%.po,%,$@)
-	msgmerge -U $@ $<
-
-locale/%/LC_MESSAGES/messages.mo: po/%.po
-	msgfmt $< -o $@
+```sh
+grep -ohE '(\b_|lib\.gettext) *\(? *"([^"]*)"' main.lua counter.lua
+grep -ohE 'gettext\("[^"]*"'                   main.c
 ```
 
-The port has no counterpart to the first two. The `msgfmt` rule genuinely does
-not carry over — `Locale` reads `.po` directly at startup, so no `.mo` is
-needed, and that is a real correspondence. The `xgettext` and `msgmerge` halves
-are not, and their absence is load-bearing: it is the whole reason gap 2 can
-sit in the tree undetected.
+which gives 40 from the Lua and 1 from the C: **41**.
 
-Fix: a `rake pot` task running `rxgettext` (from the `gettext` gem) or
-`xgettext -L Ruby` over `lib/` and `exe/`, a `rake po` task running `msgmerge
--U`, and a CI check that `rake pot` leaves `po/MESSAGES.pot` unchanged.
+`po/MESSAGES.pot` on the upstream branch is **not** usable as ground truth
+either. Its `POT-Creation-Date` is `2025-06-21`, six months behind the tip, and
+it still carries seven msgids upstream deleted (`Add to list`, `Move up`,
+`Move down`, `Move to top`, `Move to bottom`, `Send a tip!`,
+`Show in a separate window`) while missing four upstream has added
+(`Create Counter`, `New Counter`, `No Counters`, `Reorder in List`). A ledger
+keyed on it is keyed on an app that no longer exists.
 
-## Notes on the port's gettext substitute
+The port's `po/MESSAGES.pot` was regenerated by `rake pot` against the port's
+source and carries 40 keys.
 
-`lib/tally/locale.rb` replaces libintl with a 145-line reader: it resolves the
-locale from `LANGUAGE`, `LC_ALL`, `LC_MESSAGES`, `LANG` in that order, tries
-`fr_CA` before `fr`, parses `msgid`/`msgstr` pairs with continuation lines,
-drops the header entry and untranslated entries so a missing translation falls
-back to the msgid, and unescapes `\n`, `\t`, `\r`.
+## The key diff
 
-Checked against the three shipped catalogues: correct for all of them. Two
-things it cannot do that the class comment's "the same msgids, and the same
-fall-back-to-msgid behaviour gettext itself has" glosses over —
+```
+$ comm -23 upstream-source.keys port-source.keys
+An unrecoverable error occurred when loading Tally, preventing the program from starting.\n
 
-- **No `msgctxt`.** A `msgctxt`/`msgid` pair would be read as a bare `msgid`
-  and could collide with an unqualified one.
-- **No plural forms.** `msgid_plural`/`msgstr[0]` are not parsed;
-  `msgstr[0]` would not match the `msgstr` regex and the entry would be
-  dropped, falling back to the singular msgid for every count.
+$ comm -13 upstream-source.keys port-source.keys
+(nothing)
+```
 
-Neither is needed by tally today — the catalogues contain no contexts and no
-plurals — so neither is a gap. They are recorded because the first time a
-pluralised string is added to this port it will silently render the singular,
-and because `Locale` has no tests (`test-parity.md` gap 2) to notice.
+One gap, no extras. The other 40 keys are byte-identical, ellipsis
+(`Filter by name…`), exclamation marks and capitalisation included.
 
-One more thing the port does not do and upstream does: `setlocale(LC_ALL, "")`.
-GTK and libadwaita call it themselves on init, so the platform's own strings
-(the About dialog's "Credits", the shortcuts dialog's chrome) still localise;
-only the app's own lookups go through `Locale`. Not a gap, but it means the two
-halves of the UI resolve their language by two different mechanisms, and
-`Locale.candidates` has to agree with `setlocale` for them to match.
+## Gap 1 — the startup-failure message
 
-## Step 5 — prove it
-
-| Claim | Evidence |
+| | |
 |---|---|
-| 43/43 msgids preserved | four `diff`s above, empty |
-| 3/3 languages preserved | `po/fr.po`, `po/id.po`, `po/it.po`, msgstr-identical |
-| catalogues reach the installed gem | `po/**/*` in `spec.files` |
-| domain preserved | `Locale::DOMAIN = "messages"` |
-| every `_()` call site resolves | **no** — 7 of 27 do not |
-| every translated string upstream ships survives | **no** — 9 desktop-entry values lost |
-| the pot can be regenerated | **no** — no extraction task exists |
+| msgid | `An unrecoverable error occurred when loading Tally, preventing the program from starting.\n` |
+| Kind | single |
+| Uses | 1 → 0 |
+| Upstream site | `main.c:127` |
+| Port site | — |
+| Translated upstream | `fr` ✓, `id` ✓, `it` ✓ — all three, today |
+| State | **gap** |
+
+`main()`'s default branch prints this to stderr through `gettext` and returns
+the Lua error code when the bytecode will not load. `exe/tally` is six lines
+with no `rescue`, so a startup failure produces an untranslated Ruby backtrace.
+
+In all three of the port's catalogues the entry has been demoted to an obsolete
+`#~` block by `msgmerge`, which means three human translations of it are
+sitting in this repository, unreachable, because the code that used them was
+not written.
+
+**Text owed** (copy, never retype):
+
+```
+An unrecoverable error occurred when loading Tally, preventing the program from starting.\n
+```
+
+This is also `component-parity.md` Gap 2 — one edit closes both rows, and it is
+tracked in both ledgers so a reader of either can see it.
+
+## The languages
+
+```
+$ diff <(ls up/po/*.po | xargs -n1 basename) <(ls po/*.po | xargs -n1 basename)
+(no difference)
+```
+
+All three catalogues came across. What did not come across intact is what they
+contain.
+
+| | fr | id | it |
+|---|---:|---:|---:|
+| Upstream entries | 42 | 42 | 42 |
+| …translated | 42 | 42 | 42 |
+| …fuzzy | 0 | 0 | 0 |
+| …empty | 0 | 0 | 0 |
+| **Port entries** | 40 | 40 | 40 |
+| …translated and usable | **33** | **33** | **33** |
+| …fuzzy, therefore **dropped at runtime** | **4** | **4** | **4** |
+| …empty | 3 | 3 | 3 |
+
+Against upstream's *live* source rather than its stale catalogue, upstream
+renders **34 of its 41** strings in French; the port renders **33 of its 40**.
+
+### The four fuzzy entries, per language
+
+`lib/tally/locale.rb` honours `#, fuzzy` and drops those entries, which is what
+gettext itself does and is the right behaviour — a fuzzy entry is `msgmerge`'s
+guess, and the port's own comment names the guess that went wrong. But the
+consequence is four strings per language, twelve in total, rendering English
+where the file contains a translation:
+
+| msgid | fr guess | Is the guess right? |
+|---|---|---|
+| `Add to List` | `Ajouter à la liste` | **yes** — it is the human translation of `Add to list`, which upstream orphaned by capitalising one letter |
+| `Show in a Separate Window` | `Ouvrir une fenêtre individuelle pour ce compteur` | **yes** — same case-only orphaning of `Show in a separate window` |
+| `Create Counter` | `Créer un nouveau compteur` | no — that is the translation of `Create a new counter`, the plus button's tooltip, not the status page's button |
+| `Support this app!` | `Traduire cette application!` | no — that is the *Translate* link's French, paired against the *Support* link |
+
+Two of the four are correct recoveries of donated work that upstream threw away
+with a capital letter. Leaving them fuzzy discards them a second time.
+
+**Owed:** review those two per language — six entries — against upstream's
+`po/{fr,id,it}.po` orphans `Add to list` and `Show in a separate window`,
+confirm the text, and clear the `fuzzy` flag. The other two stay fuzzy until a
+translator is asked; they are wrong, and a wrong translation shown as a right
+one is worse than English.
+
+### The three empty entries, per language
+
+`New Counter`, `No Counters` and `Reorder in List` have no translation in any
+of the three languages — and they have none upstream either. They are
+upstream's own debt, inherited intact, and they are **not** a port gap: the key
+exists, it is byte-identical, and nobody has ever translated it.
+
+Seven upstream msgids have no entry in upstream's own `fr.po`:
+`Add to List`, `Create Counter`, `New Counter`, `No Counters`,
+`Reorder in List`, `Show in a Separate Window`, `Support this app!`. Four of
+those seven the port has recovered a guess for; three it has not.
+
+## Message ledger
+
+Grouped by the upstream file the string lives in, mapped to the port file that
+replaced it. `Uses` is upstream call sites → port call sites.
+
+### `main.c` → `exe/tally` (1 message)
+
+| # | msgid | Kind | Uses | Port site | State |
+|---|---|---|---:|---|---|
+| 1 | `An unrecoverable error occurred when loading Tally, preventing the program from starting.\n` | single | 1 → 0 | — | **gap** |
+
+### `main.lua` → `lib/tally/*.rb` (28 messages)
+
+| # | msgid | Kind | Uses | Port site | State |
+|---|---|---|---:|---|---|
+| 2 | `Tally` | single | 6 → 5 | `about_dialog.rb:47`, `main_window.rb:50`, `main_window.rb:110`, `counter_window.rb:100`, `counter_window.rb:215` | ported ⚠ |
+| 3 | `No color` | single | 1 → 1 | `colors.rb:25` (`N_`) | ported |
+| 4 | `Red` | single | 1 → 1 | `colors.rb:26` | ported |
+| 5 | `Orange` | single | 1 → 1 | `colors.rb:27` | ported |
+| 6 | `Yellow` | single | 1 → 1 | `colors.rb:28` | ported |
+| 7 | `Green` | single | 1 → 1 | `colors.rb:29` | ported |
+| 8 | `Blue` | single | 1 → 1 | `colors.rb:30` | ported |
+| 9 | `Purple` | single | 1 → 1 | `colors.rb:31` | ported |
+| 10 | `translator-credits` | single | 1 → 1 | `about_dialog.rb:52` | ported |
+| 11 | `Translate this app!` | single | 1 → 1 | `about_dialog.rb:37` (`N_`) | ported |
+| 12 | `Support this app!` | single | 1 → 1 | `about_dialog.rb:38` (`N_`) | ported ⚠ fuzzy ×3 |
+| 13 | `Main Window` | single | 1 → 1 | `shortcuts_dialog.rb:44` | ported |
+| 14 | `Quit Application` | single | 2 → 2 | `shortcuts_dialog.rb:45`, `:50` | ported |
+| 15 | `Keyboard Shortcuts` | single | 2 → 3 | `shortcuts_dialog.rb:46`, `main_menu.rb:17`, `shortcuts_dialog.rb:69` (dialog title) | ported ⚠ |
+| 16 | `About Tally` | single | 2 → 2 | `shortcuts_dialog.rb:47`, `main_menu.rb:18` | ported |
+| 17 | `Counter Window` | single | 1 → 1 | `shortcuts_dialog.rb:49` | ported |
+| 18 | `Close Window` | single | 1 → 1 | `shortcuts_dialog.rb:51` | ported |
+| 19 | `Create a new counter` | single | 1 → 1 | `main_window.rb:117` | ported |
+| 20 | `Delete selected counters` | single | 1 → 1 | `main_window.rb:125` | ported |
+| 21 | `Filter counters by name and/or color` | single | 1 → 1 | `main_window.rb:141` | ported |
+| 22 | `Menu` | single | 1 → 1 | `main_window.rb:149` | ported |
+| 23 | `Select counters to delete` | single | 2 → 2 | `main_window.rb:134`, `main_window.rb:297` | ported |
+| 24 | `Stop selecting without deleting anything` | single | 1 → 1 | `main_window.rb:292` | ported |
+| 25 | `Filter by name…` | single | 1 → 1 | `search_bar.rb:56` | ported |
+| 26 | `No Counters` | single | 1 → 1 | `empty_state.rb:20` | ported (untranslated ×3, upstream too) |
+| 27 | `Create Counter` | single | 1 → 1 | `empty_state.rb:33` | ported ⚠ fuzzy ×3 |
+| 28 | `Add to List` | single | 1 → 1 | `new_counter_dialog.rb:99` | ported ⚠ fuzzy ×3 |
+| 29 | `Add this counter to the list` | single | 1 → 1 | `new_counter_dialog.rb:89` | ported |
+| 30 | `New Counter` | single | 1 → 1 | `new_counter_dialog.rb:30` | ported (untranslated ×3, upstream too) |
+| 31 | `Name` | single | 2 → 2 | `new_counter_dialog.rb:79`, `counter_menu.rb:58` | ported |
+
+### `counter.lua` → `lib/tally/*.rb` (10 messages)
+
+| # | msgid | Kind | Uses | Port site | State |
+|---|---|---|---:|---|---|
+| 32 | `Color` | single | 1 → 1 | `counter_menu.rb:66` | ported |
+| 33 | `Reorder in List` | single | 1 → 1 | `counter_menu.rb:80` | ported (untranslated ×3, upstream too) |
+| 34 | `Move counter to the top of the current list` | single | 1 → 1 | `counter_menu.rb:99` | ported |
+| 35 | `Move counter to just above the previous row` | single | 1 → 1 | `counter_menu.rb:106` | ported |
+| 36 | `Move counter to just below the next row` | single | 1 → 1 | `counter_menu.rb:113` | ported |
+| 37 | `Move counter to the bottom of the current list` | single | 1 → 1 | `counter_menu.rb:120` | ported |
+| 38 | `Show in a Separate Window` | single | 1 → 1 | `counter_menu.rb:128` | ported ⚠ fuzzy ×3 |
+| 39 | `Create a new window for this counter` | single | 1 → 1 | `counter_menu.rb:136` | ported |
+| 40 | `Decrement by 1` | single | 1 → 1 | `counter_window.rb:121` | ported |
+| 41 | `Increment by 1` | single | 1 → 1 | `counter_window.rb:127` | ported |
+
+No message is plural on either side, so there is no `kind_mismatch` to report.
+
+### `Uses` mismatches
+
+Three, all investigated, none a translation gap:
+
+- **`Tally` 6 → 5.** Upstream's sixth site is `counter.lua:302`, which
+  re-titles an open pop-out as the name is typed; the port reaches the same
+  string through `#formatted_title` (`counter_window.rb:215`), which serves
+  both the constructor and the rename. One helper, same titles on screen.
+- **`Keyboard Shortcuts` 2 → 3.** The port's extra site is the shortcuts
+  dialog's own `title`, which upstream does not set because upstream's
+  `Gtk.ShortcutsWindow` takes its title from the section — whose title is the
+  nil global `app_title`. An added call site, not a missing one.
+- **`Select counters to delete` 2 → 2** and every other row match.
+
+No `Uses` row is recorded as a translation gap; the structural question belongs
+to `component-parity.md`, which accounts for all of them.
+
+## Non-code message sources
+
+| Source | Upstream | Port |
+|---|---|---|
+| `.desktop` `Name`/`Comment`/`Keywords`, en/fr/id/it | 12 localised keys ×2 files | identical ×2 files — only `Icon=` differs |
+| AppStream `<name>`/`<summary>` | untranslated upstream | untranslated, identical |
+| AppStream `<release>` notes | not extracted (ITS rules exclude them) | same |
+| GSettings schema | none | none |
+
+Upstream's README documents that a translator must hand-edit the `.desktop`
+files as the final step of a localisation. The port's `.desktop` files carry
+all twelve localised keys verbatim, so that work survived.
+
+## Rules check
+
+- No msgid was reworded to match the port. All 40 shared keys are upstream's
+  bytes.
+- The one gap carries its `text owed` verbatim, for transcription.
+- `extra` is zero and would not have blocked parity if it were not.
+- `Uses` mismatches were investigated and none produced a translation row.
+- The fuzzy finding is reported as a count of strings that do not reach the
+  screen, not as an adjective.

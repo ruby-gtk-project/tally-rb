@@ -3,116 +3,110 @@
 |  |  |
 |---|---|
 | Upstream | `origin/trunk` @ `e9986b010c950d2df91b682769b744c412348e0c` |
-| Port | `ruby` @ `eb1f26ae78a5584b17c03f2e2a646a9a0051ad54` |
+| Port | `ruby` @ `0dfc40d8db4335c55114b631c8228a60ec804a0f` |
 | Upstream tests | **0** |
 | Ported | 0 |
-| Gaps | **0** |
-| Port tests | **0** |
-| Test command | `rake spec` (declared) — **does not run**, see below |
+| Gaps | 0 |
+| Parity | **0 / 0 — met trivially** |
+| Test command | `ruby -e 'require "rspec/core"; exit RSpec::Core::Runner.run(["--format","progress","--require","spec_helper","spec"])'` and `xvfb-run ruby test/drive_tally.rb`, both inside `nix develop` |
 
 ## Upstream has no test suite
 
 Verified, not assumed:
 
 ```
-$ test-census.sh <upstream tree>
+$ .claude/skills/test-parity/scripts/test-census.sh <upstream tree>
 (0 rows)
 
-$ git ls-tree -r --name-only origin/trunk | grep -iE '(^|/)(test|tests|spec)/'
+$ git ls-tree -r --name-only origin/trunk | grep -iE '(^|/)(tests?|spec)/'
 (nothing)
 
 $ git show origin/trunk:Makefile | grep -i test
 (nothing)
+
+$ git show origin/trunk:.github/workflows/ci.yml
+# one job: flatpak-builder against ca.vlacroix.Tally.json. No test step.
 ```
 
-Upstream is 1372 lines of Lua and 134 of C with no `test/` or `tests/`
-directory, no test target in the `Makefile`, and none of `Test.add_func`,
-`g_test_add_func`, `unittest`, `pytest`, `#[test]`, `#[cfg(test)]`, `it(...)`,
-`def test_*` or the house `check("...")` anywhere in the tree. The only CI it
-ships (`.github/workflows/ci.yml`) builds the Flatpak; it runs nothing.
+Upstream is 862 lines of Lua in `main.lua`, 510 in `counter.lua` and 134 of C
+in `main.c`. There is no `test/`, no `tests/`, no test target in the
+`Makefile`, and none of `Test.add_func`, `g_test_add_func`, `unittest`,
+`pytest`, `#[test]`, `#[cfg(test)]`, `it(...)` or `busted` appears anywhere in
+the tree. The only CI is a Flatpak build, which proves the app compiles and
+nothing about what it does.
 
-Parity is **0/0 and is met trivially.** There is no ledger table to build,
-because there is nothing to map.
+Parity is therefore **0 / 0** and is met trivially. There is no ledger table to
+write, because there is nothing to map.
 
-**The port therefore inherits no safety net.** Every behaviour in this app —
-the debounced write, the temp-file rename, the filter predicate's three
-branches, select mode's two-way widget swap, the reorder that has to move two
-orders at once, the drag-and-drop index arithmetic, the colour-class
-add/remove pairing — was pinned by nobody upstream and is pinned by nobody
-here. Leaving a 0/0 result implied is how it gets read as a pass, so: this is
-not a pass. It is the absence of a check.
+## What that actually means
 
-## The port has no tests either
+**The port inherits no safety net.** Not one of the checks listed below was
+written from an upstream test, because there are no upstream tests. Every
+behaviour upstream considered worth pinning down was pinned down nowhere, so
+the port has no record of which edge cases bit the original author, which bug
+came back, or which branch was fixed and must stay fixed. The port's own suite
+is substantial and green, and that is a fact about the port, not evidence of
+fidelity to upstream.
+
+Three consequences worth stating rather than implying:
+
+1. A regression against upstream's *behaviour* cannot be caught by any test in
+   this repository, because no test encodes upstream's behaviour as such. The
+   only record of it is `component-parity.md` and the two Lua files.
+2. The port's 188 checks were written by the same hand that wrote the code they
+   check. Where that hand misread upstream, the test agrees with the misreading.
+   Two upstream defects found during this audit — the nil `app_title`, the
+   `app.about` action that does not exist — were found by reading, not by any
+   test.
+3. A reader who sees "188 checks, all green" and concludes the port is faithful
+   has drawn a conclusion the number does not support. This section is the
+   reason the 0/0 result is written out longhand instead of left as a tick.
+
+## Extra
+
+Everything the port tests is extra, by definition, and sits outside the count.
+
+### `spec/` — 83 examples, the display-free half, 0 failures
+
+| File | Examples | What it covers |
+|---|---:|---|
+| `spec/tally/colors_spec.rb` | 5 | the `system`/`nil` duality, `key`/`value` round-tripping, `accent?`, the seven translated names |
+| `spec/tally/counter_spec.rb` | 12 | name presence and clamping, value clamping to 0–1,000,000, colour change notification with the previous key, the two registries, `move`, `forget`, `serialize`, `from_h` with string and symbol keys |
+| `spec/tally/locale_spec.rb` | 13 | the environment precedence `LANGUAGE`/`LC_ALL`/`LC_MESSAGES`/`LANG`, `fr_CA` → `fr` fallback, `C`/`POSIX` rejection, the po reader's continuation lines, header and untranslated entries dropped, `#, fuzzy` dropped, `#~` obsolete entries ignored, escape unescaping |
+| `spec/tally/lua_config_spec.rb` | 10 | reading upstream's `return { … }` grammar without evaluating it: width/height/maximized, counter tables, quoted keys, malformed input raising `LuaConfig::Error` |
+| `spec/tally/metainfo_spec.rb` | 13 | the AppStream reader: newest version, release notes by version, `<p>`/`<ul>` markup preserved, missing version handled |
+| `spec/tally/store_spec.rb` | 13 | the atomic write, `tallynext` preferred on read, the non-directory removal, the debounce counter, the Lua→JSON import with its `tally.lua.bak`, and the refusal to write over a file neither reader understood |
 
 ```
-$ test-census.sh .
-(0 rows)
-
-$ find spec -type f
-spec/README.md
-spec/spec_helper.rb
+$ nix develop --command ruby -e 'require "rspec/core"; exit RSpec::Core::Runner.run(["--format","progress","--require","spec_helper","spec"])'
+83 examples, 0 failures
 ```
 
-There is no `## Extra` section to write, because there is nothing extra. The
-port ships an elaborate RSpec harness — `kettle-test`, `kettle-soup-cover`,
-`turbo_tests2`, `.rspec`, `.rspec_status` persistence, `.simplecov`,
-`.github/.codecov.yml`, twelve modular gemfiles, an `Appraisals` file — and
-zero examples.
+### `test/drive_tally.rb` — 105 driven checks across 34 steps, 0 failures
 
-## Gap 1 — the harness cannot load, so even an empty suite fails
+Runs the real application under Xvfb: builds the window, opens every dialog,
+creates and deletes counters, drives select mode, search and colour filtering,
+reordering and the pop-out window, and writes twelve screenshots to
+`tmp/shots/`.
 
-`spec/spec_helper.rb:30` is:
-
-```ruby
-require "tally/rb"
+```
+$ nix develop --command xvfb-run -a ruby test/drive_tally.rb
+105 of 105 checks passed
+DRIVE OK
 ```
 
-There is no `lib/tally/rb.rb`. The `lib/tally/rb/` directory contains only
-`version.rb`, and the library's entry point is `lib/tally.rb`. So
-`bundle exec rspec` raises `LoadError: cannot load such file -- tally/rb`
-before it reaches a single example.
+`test/gtk_driver.rb` is the harness (`step`, `check`, `shot`), not a test file.
 
-This matters more than the missing examples do. It means the first person to
-write a spec here hits an unrelated failure and has to debug the harness
-instead, and it means no CI run of this suite has ever gone green — a suite
-that cannot load cannot report that it is empty.
+**A census caveat worth recording.** `test-census.sh` collects both `check(…)`
+and `step(…)` from a Ruby driver and reports 121 rows for this file, against
+121 textual call sites but 34 steps and 105 checks at runtime — the assertion
+unit here is `check`, and the census is matching at both. The number to quote
+is the runner's, not the census's.
 
-Fix: either add `lib/tally/rb.rb` (requiring `tally/rb/version` and
-`../tally`), or change the require to `require "tally"`. One line either way.
+## Rules check
 
-## Gap 2 — nothing pins any behaviour the port invented
-
-Parity is a floor, not a ceiling, and there are two kinds of behaviour here
-that no upstream test could ever have covered because upstream does not have
-them. These are not parity rows; they are the checks this port owes **itself**,
-and they are listed because `clean: true` on a 0/0 ledger would otherwise hide
-them.
-
-| Behaviour still owed | Why it is this port's problem |
-|---|---|
-| `Store` round-trips a document: write, re-read, same counters in the same order | The format changed from Lua to JSON; nothing checks the new one |
-| `Store#parse` on an unparsable file falls back without destroying it | It currently falls back **and then overwrites** — see `accountability-ensurance.md` finding 1 |
-| `Store#queue_write` writes once for N calls inside the debounce window | The pending-counter trick is subtle and hand-ported |
-| `Locale.parse` reads all three shipped `.po` files and returns the upstream msgstrs | A hand-rolled po reader with no gettext to fall back on |
-| `Locale.candidates` resolves `LANGUAGE`/`LC_ALL`/`LC_MESSAGES`/`LANG` in that order and `fr_CA` before `fr` | 20 lines of environment precedence written from scratch |
-| `Colors.key`/`Colors.value` round-trip `nil` ↔ `"system"` | The whole colour system hangs off this pair |
-| `Counter#value=` clamps to 0…1 000 000 and only notifies on a real change | Upstream clamps in the `SpinButton`; the port moved it into the model |
-| `Counter.move` lands the counter at the requested index for top, bottom, up and down | Reorder correctness is the one thing upstream's own changelog records a bug in (0.6.3) |
-| `SearchBar#matches?` across all four branches (closed / open-empty / colour-only / name+colour) | Reimplemented from Lua, and the easiest place to invert a condition |
-| `CounterRow#check_mode=` swaps all six widget states both ways | Six properties set in two branches, no check |
-| `Icons#complete?` is true | A one-call guard against the 16 SVGs going missing from the gem |
-
-Eleven non-widget checks, all of them plain Ruby with no display needed. The
-`ruby-gtk-testing` skill covers the widget-level driving on top of that.
-
-## Prove it
-
-Four conditions; the first three are met and the fourth is not.
-
-- counts equal — **yes**, 0 = 0
-- every ledger row has a port test — **yes**, there are no rows
-- every named test exists — **yes**, none are named
-- the port's suite passes under its own target — **no.** `rake spec` →
-  `LoadError: cannot load such file -- tally/rb`
-
-**0/0 on parity, 0 tests in the port, and the harness does not load.**
+- Nothing was lowered to pass; both suites were run and both are green.
+- No upstream test was merged, skipped or marked `n/a`, because there are none.
+- The 188 extra checks are listed as extra and are outside the count.
+- The "no inherited safety net" finding is stated above in its own section
+  rather than left as an implication of the zero.

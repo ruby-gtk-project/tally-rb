@@ -2,9 +2,9 @@
 
 |  |  |
 |---|---|
-| Upstream | `origin/trunk` @ `e9986b010c950d2df91b682769b744c412348e0c` |
-| Port | `ruby` @ `eb1f26ae78a5584b17c03f2e2a646a9a0051ad54` |
-| Scope | whole app (upstream is 1372 lines of Lua + 134 of C; a unit-at-a-time census would be larger than the app) |
+| Upstream | `origin/trunk` @ `e9986b010c950d2df91b682769b744c412348e0c` ("tally: Archive repository") |
+| Port | `ruby` @ `0dfc40d8db4335c55114b631c8228a60ec804a0f` |
+| Scope | whole app — upstream is 862 lines of Lua in `main.lua`, 510 in `counter.lua`, 134 of C in `main.c`; the port is 3,749 lines of Ruby across 24 files |
 
 ## Step 1 — declarative UI
 
@@ -13,364 +13,304 @@ There is none, on either side.
 ```
 $ git ls-tree -r --name-only origin/trunk | grep -E '\.(ui|blp)$'
 (nothing)
+$ find . -name '*.ui' -o -name '*.blp'
+(nothing)
 ```
 
-Upstream is LuaGObject building every widget in code (`main.lua`,
-`counter.lua`), with `main.c` as an entry stub that embeds Lua bytecode and
-binds `gettext`. There is no `.ui`, no `.blp`, no GSettings schema, no
-`GtkBuilder` XML. The port has none either, by house-style design. So the
-inventory below was recovered by reading both trees; Step 1 contributes nothing
-and the scan is the only mechanical input.
+Upstream is LuaGObject constructing every widget in code through constructor
+tables (`Adw.HeaderBar { title_widget = … }`). `main.c` is an entry stub that
+embeds Lua bytecode, binds `gettext(3)` and reports the `-DDEVEL` compile flag.
+There is no GtkBuilder XML, no blueprint, no GSettings schema. The port has
+none either, by house-style design — widgets are memoized accessors.
 
-## Step 2–3 — the scan
+So Step 1 contributes nothing and the whole inventory below was recovered by
+reading both trees, with the scan as a lead.
 
-`component-scan.sh` does not read `.lua` (it matches `.ui .blp .vala .c .h .py
-.js .ts .rs .rb`), so upstream produces **zero rows** as shipped. The upstream
-numbers below come from running the scan over copies of `main.lua` and
-`counter.lua` renamed to `.rb` — LuaGObject's `Adw.Foo {}` constructor tables
-are close enough to Ruby's `Adwaita::Foo.new` for the regexes to match — and
-then corrected by hand. Treat them as a lead, not a verdict; the per-component
-tables are the reading.
+## Step 2–3 — the scan, and the scanner defect it exposed
 
-| Axis | Upstream distinct | Port distinct |
-|---|---:|---:|
-| Widget types | 33 | 31 |
-| Controllers | 2 | 2 |
-| CSS classes attached | 20 | 20 |
-| Signals connected | 14 | 17 |
-| Actions installed | 4 | 4 |
+`component-scan.sh` matches `.ui .blp .vala .c .h .py .js .ts .rs .rb`. **It
+does not read `.lua`**, so the upstream tree as shipped produces zero rows:
 
-The widget-type counts being this close on a port this young is unusual and it
-is real: tally is a small app and the port is structurally complete. The gaps
-in this audit are therefore almost all **outside** the widget stream — assets,
-packaging, metadata, dependency declaration and verification. See
-`component-parity.md`.
+```
+$ .claude/skills/component-identification/scripts/component-scan.sh <upstream> | wc -l
+0
+```
 
-## Component list
+Report this to the skill: a Lua/LuaGObject upstream is invisible to the
+scanner, and a reviewer who trusts the empty result concludes the port has no
+upstream to be measured against. The workaround used here is to copy
+`main.lua` → `main.rb` and `counter.lua` → `counter.rb` and scan that; the
+Ruby patterns catch LuaGObject's `Adw.Foo {}` tables, which gives 57 rows.
+It does **not** catch Lua's parenthesis-free `add_css_class "spin"`, so the
+CSS stream is empty on the upstream side and every CSS row below was read by
+hand out of the two Lua files.
 
-File mapping, in the order a user meets the components.
+```
+$ scan <upstream-as-rb> | wc -l   57
+$ scan <port>           | wc -l  129
+```
 
-| Upstream | Port |
-|---|---|
-| `main.lua` (app section) + `main.c` | `lib/tally/application.rb`, `exe/tally`, `lib/tally.rb` |
-| `main.lua` (styles section) | `lib/tally/styles.rb` |
-| `main.lua` (`window` class) | `lib/tally/main_window.rb` |
-| `main.lua` (`tallymenu`) | `lib/tally/main_menu.rb` |
-| `main.lua` (`lbox`/`clamp`/`multi`, `enlarge`, `shrink`, `scrollbottom`) | `lib/tally/counter_list.rb` |
-| `main.lua` (searchbar block) | `lib/tally/search_bar.rb` |
-| `main.lua` (`statuspage`) | `lib/tally/empty_state.rb` |
-| `main.lua` (`window:tallydialog`) | `lib/tally/new_counter_dialog.rb` |
-| `main.lua` (`aboutwin`) | `lib/tally/about_dialog.rb` |
-| `main.lua` (`newshortcutwindow`) | `lib/tally/shortcuts_dialog.rb` |
-| `main.lua` (`readcfg`/`writecfg`/`queuewrite` + bootstrap do-block) | `lib/tally/store.rb` |
-| `main.lua` (`lib.getcolorname`) | `lib/tally/colors.rb` |
-| `counter.lua` (`counter` fields, `serialize`, `delete`, registries) | `lib/tally/counter.rb` |
-| `counter.lua` (`counter` constructor, `setcheckmode`, drag/drop) | `lib/tally/counter_row.rb` |
-| `counter.lua` (`createmenu`) | `lib/tally/counter_menu.rb` |
-| `counter.lua` (`colorrow`, `gencolorcheck`) + the two open-coded copies in `main.lua` | `lib/tally/color_selector.rb` |
-| `counter.lua` (`duplicate`) | `lib/tally/counter_drag_row.rb` |
-| `counter.lua` (`popout`) | `lib/tally/counter_window.rb` |
-| `data/tally.gresource.xml` + `data/icons/**` | `lib/tally/icons.rb` + `data/icons/**` |
-| `main.c` (`lua_gettext`) + `po/**` | `lib/tally/locale.rb` + `po/**` |
-| `icons/ca.vlacroix.Tally{,.Devel}{,-symbolic}.svg` | — |
-| `ca.vlacroix.Tally{,.Devel}.desktop` | — |
-| `ca.vlacroix.Tally{,.Devel}.metainfo.xml` | — |
-| `ca.vlacroix.Tally{,.Devel}.json` (Flatpak) | — |
-| `COPYING` | — |
-| `Makefile` (bytecode, gresource, `xgettext`/`msgmerge`/`msgfmt`, `install`) | partly `flake.nix`; the message-catalogue half has no counterpart |
-| `tally.doap`, `tally.png`, `.github/workflows/ci.yml` | — |
+Both numbers are leads. The port side over-reports, because the scanner
+matches type names inside doc comments: `Adw.AboutDialog × 1` in
+`lib/tally/metainfo.rb`, `Gtk.SpinButton × 1` in `lib/tally/lua_config.rb` and
+`Gtk.ListBoxRow × 1` in `lib/tally/counter.rb` are all prose, not widgets, and
+are struck below. `Gtk.InitError × 1` in `lib/tally/rb.rb` is an exception
+class named in a comment, and `Gtk.DragIcon × 3` in `lib/tally/counter_row.rb`
+is one real call behind a `respond_to?` binding-compatibility branch.
 
-### `main.lua` (app section) + `main.c` — the application object
+## Step 4 — the file mapping
 
-| Widget | × | CSS | Signals / actions | Notes |
-|---|---:|---|---|---|
-| `Adw.Application` | 1 | — | `activate`, `startup`, `shutdown` | `application_id` and `resource_base_path = "/ca/vlacroix/Tally"` |
-| — | — | — | accels for `win.shortcuts` `<Ctrl><Shift>question`, `win.about` `F1`, `win.close` `<Ctrl>W`, `app.quit` `<Ctrl>Q` | four `set_accels_for_action` calls |
-| — | — | — | action `app.quit` | `Gio.SimpleAction`, `enabled = true` |
+Upstream splits the app across two Lua files by *object*, not by view, so the
+mapping is many-to-many and is the thing to get right before any comparison.
 
-`main.c` additionally supplies `get_app_id`, `get_app_ver`, `get_is_devel`
-(from the `-DDEVEL` compile flag) and `gettext`, plus a GResource load of
-`/app/data/tally.gresource`, and one translatable string of its own: the
-unrecoverable-load-error message on stderr.
-
-Repeaters: none. Conditional: `is_devel` switches the app id to the `.Devel`
-suffix and adds the `devel` CSS class to every window.
-
-### `main.lua` (styles section) — the stylesheet
-
-Not widgets. Two `Gtk.CssProvider`s (base+light, base+dark) added to the
-default `Gdk.Display` at priority 1000000, swapped on
-`Adw.StyleManager::notify::dark`. 20 rule blocks in base, 25 in light, 25 in
-dark. The classes the sheet defines: `colorselector`, `popout`, `tally-list`,
-and `red`/`orange`/`yellow`/`green`/`blue`/`purple`/`system` in both the
-`.colorselector checkbutton.<c>` and `list.tally-list row.<c>` /
-`toolbarview.<c>` forms, each with a `:hover` variant.
-
-### `main.lua` — the main window
-
-| Widget | × | CSS | Signals | Notes |
-|---|---:|---|---|---|
-| `Adw.ApplicationWindow` | 1 | `devel` (when `is_devel`) | `close-request` | title `_"Tally"`, default 500×600, min 360×294; `maximize()` and the saved size applied from the config |
-| `Adw.ToolbarView` | 1 | — | — | `top_bar_style` toggled `FLAT` ↔ `RAISED_BORDER` by `refreshtoolbar`, `enlarge` and `shrink` |
-| `Adw.HeaderBar` | 1 | — | — | `title_widget = Adw.WindowTitle.new(_"Tally", "")` |
-| `Adw.WindowTitle` | 1 | — | — | empty subtitle |
-| `Gtk.Button` (new) | 1 | — | `clicked` → `tallydialog` | `plus-large-symbolic`, `_"Create a new counter"` |
-| `Gtk.Button` (delete) | 1 | `destructive-action` | `clicked` → delete checked | `delete-symbolic`, `_"Delete selected counters"`, `visible = false` |
-| `Gtk.ToggleButton` (select) | 1 | — | `notify::active` | `check-round-outline-symbolic`; tooltip swaps `_"Select counters to delete"` ↔ `_"Stop selecting without deleting anything"` |
-| `Gtk.ToggleButton` (search) | 1 | — | — | `loupe-large-symbolic`, `_"Filter counters by name and/or color"`; `active` bound BIDIRECTIONAL to the search bar's `search-mode-enabled` |
-| `Gtk.MenuButton` | 1 | — | — | `menu-large-symbolic`, `_"Menu"`, `menu_model = tallymenu`; `grab_focus` at the end of construction |
-| `Adw.Breakpoint` | 1 | — | `apply` → `shrink`, `unapply` → `enlarge` | condition `max-width: 400px` |
-| — | — | — | actions `win.shortcuts`, `win.about` | both `Gio.SimpleAction`, `enabled = true` |
-
-Pack order: `pack_start` new, delete, select; `pack_end` menu, search.
-Conditional: `refreshtoolbar` hides the select button and swaps the content for
-the status page when there are no counters. `close-request` closes every
-pop-out window.
-
-### `main.lua` — the primary menu
-
-A `Gio.Menu` with two items: `_"Keyboard Shortcuts"` → `win.shortcuts`,
-`_"About Tally"` → `win.about`. No quit item, though `<Ctrl>Q` is bound.
-
-### `main.lua` — the counter list and its responsive layout
-
-| Widget | × | CSS | Signals | Notes |
-|---|---:|---|---|---|
-| `Gtk.ScrolledWindow` | 1 | — | — | `hscrollbar_policy = NEVER` |
-| `Adw.MultiLayoutView` | 1 | — | — | one slot, `"list"` |
-| `Adw.Layout` | 2 | — | — | wide wraps the slot in the clamp, narrow uses it bare |
-| `Adw.LayoutSlot` | 2 | — | — | both named `"list"` |
-| `Adw.Clamp` | 1 | — | — | `maximum_size = 600`, margins 24/24/12/12 |
-| `Gtk.ListBox` | 1 | `tally-list`, `boxed-list` ↔ `separators` (swapped by `enlarge`/`shrink`) | `row-activated` | `selection_mode = NONE`, `valign = START`, `visible = false` until it has a row; `set_filter_func` |
-
-`window:scrollbottom` nudges the vertical adjustment to `upper` after 20 ms;
-`counter:scroll` calls `viewport:scroll_to(row)`.
-
-### `main.lua` — the search bar
-
-| Widget | × | CSS | Signals | Notes |
-|---|---:|---|---|---|
-| `Gtk.SearchBar` | 1 | — | `notify::search-mode-enabled` → clear every colour tick | `connect_entry`, `key_capture_widget` |
-| `Gtk.Box` (vertical) | 1 | — | — | spacing 6, margins top/bottom 6 |
-| `Gtk.SearchEntry` | 1 | — | `search-changed` → `invalidate_filter` | `_"Filter by name…"` |
-| `Gtk.Box` (horizontal) | 1 | `colorselector` | — | spacing 6 |
-| `Gtk.CheckButton` | **7** (repeater over `system red orange yellow green blue purple`) | one of `system`/`red`/`orange`/`yellow`/`green`/`blue`/`purple` | `notify::active` → recompute `filtcolors` and `invalidate_filter` | ungrouped, so any number can be ticked; tooltip from `getcolorname` |
-
-The filter: a closed bar filters nothing; an open bar with an empty query and
-no colour ticked filters nothing; otherwise show when the colour is ticked (or
-none is) **and** the lowercased name contains the lowercased query as a plain
-substring.
-
-### `main.lua` — the empty state
-
-| Widget | × | CSS | Signals | Notes |
-|---|---:|---|---|---|
-| `Adw.StatusPage` | 1 | — | — | `_"No Counters"`, `icon_name = "tally-symbolic"` |
-| `Gtk.Button` | 1 | `suggested-action`, `pill` | `clicked` → `tallydialog` | `_"Create Counter"`, margins start/end 40 |
-
-### `main.lua` — the new-counter dialog
-
-| Widget | × | CSS | Signals | Notes |
-|---|---:|---|---|---|
-| `Adw.Dialog` | 1 | — | — | `_"New Counter"` |
-| `Adw.ToolbarView` | 1 | — | — | `top_bars = { Adw.HeaderBar() }` |
-| `Adw.HeaderBar` | 1 | — | — | bare |
-| `Gtk.Box` | 1 | — | — | vertical, spacing 12, margins 12 all round |
-| `Gtk.Entry` | 1 | `error` (while empty) | `changed` | `_"Name"`, `halign = FILL` |
-| `Gtk.Box` | 1 | `colorselector` | — | horizontal, spacing 6 |
-| `Gtk.CheckButton` | **7** (repeater) | the first is **unclassed**; the other six carry their colour | `notify::active` | the six are `group`ed on the first, so exactly one is ever active |
-| `Gtk.Button` | 1 | `suggested-action` | `clicked` → create | `sensitive = false` while the name is empty; `_"Add this counter to the list"` |
-| `Adw.ButtonContent` | 1 | — | — | `plus-large-symbolic`, `_"Add to List"` |
-
-Creating: insert into `tallies` and `tallyrows`, `writecfg`, append the row,
-show the list box, `scrollbottom`, `row:grab_focus`, `refreshtoolbar`, close.
-
-### `main.lua` — the about dialog
-
-One `Adw.AboutDialog`, built once at startup and presented repeatedly.
-`application_icon = app_id` (the app's **own** icon, not a symbolic action
-icon), `application_name = _"Tally"`, copyright, `developer_name`, `issue_url`,
-`license_type = GPL_3_0`, `release_notes_version = get_app_ver()` (0.7.3),
-`translator_credits = _"translator-credits"`, `version`, `website`. Two
-`add_link` calls: `_"Translate this app!"`, `_"Support this app!"`. One
-`release_notes` markup paragraph.
-
-### `main.lua` — the keyboard-shortcuts window
-
-| Widget | × | Notes |
-|---|---:|---|
-| `Gtk.ShortcutsWindow` | 1 | built fresh per activation; `transient_for` the main window, `modal = true`, `application = app` |
-| `Gtk.ShortcutsSection` | 1 | `title = app_title` — an **undefined global**, so nil |
-| `Gtk.ShortcutsGroup` | 2 | `_"Main Window"`, `_"Counter Window"` |
-| `Gtk.ShortcutsShortcut` | 5 | each carries `action_name` **and** `title` **and** `accelerator` |
-
-The five: `app.quit`/`_"Quit Application"`/`<Ctrl>Q`,
-`win.shortcuts`/`_"Keyboard Shortcuts"`/`<Ctrl><Shift>question`,
-`app.about`/`_"About Tally"`/`F1` (note: the installed action is `win.about`,
-so upstream's own reference is wrong), then in the second group
-`app.quit`/`_"Quit Application"`/`<Ctrl>Q` and
-`win.close`/`_"Close Window"`/`<Ctrl>W`.
-
-### `main.lua` — persistence
-
-Not widgets. `$XDG_CONFIG_HOME/tally/tally` holding **executable Lua source**
-(`return { width = …, height = …, maximized = "…", {…}, {…} }`), written via
-`tally/tallynext` + `os.rename`, read with `load()` and preferring a leftover
-`tallynext` whose syntax parses. `lib.queuewrite` debounces one second deep
-with a pending-write counter. The bootstrap do-block deletes a non-directory
-sitting at the `tally` path, creates the directory, and seeds the file with
-`return {}`.
-
-The port writes JSON instead, because `load()`ing a file out of a user's home
-directory is arbitrary code execution and only safe upstream because the file
-is inside a Flatpak sandbox. That change is **not** a data loss, and this is
-where the earlier inventory was wrong to leave it at "unless a one-way importer
-is written": the importer is written. `lib/tally/lua_config.rb` reads
-upstream's grammar without evaluating it — including `%q`'s hex floats, bare
-booleans and backslash-newline escapes — and `Store` imports once, keeps the
-Lua file as `tally.lua.bak`, and writes JSON over the original. A file that
-neither reader can parse makes `Store#unreadable?` true and `Store#write`
-refuse, so an unrecognised config is never overwritten with an empty one.
-
-### `counter.lua` — the counter model
-
-Not widgets. Fields `name` (default `"unnamed"`), `value` (default 0), `color`
-(nil = none), transient `checked` and `checkmode`. `serialize()` dumps **every**
-scalar field it finds, so `checked`/`checkmode` land on disk; `readcfg` only
-ever reads `name`/`value`/`color` back. Two module-level registries: `counters`
-(ordered, the serialization order) and `counterrows` (`Gtk.ListBoxRow` →
-counter). `getcolor()` answers `"system"` for nil. `counter:read()` exists and
-is never called upstream — nothing in either Lua file reaches it, because
-every upstream edit travels from the spin button into the field and never the
-other way. It is **ported and live** rather than dropped: `CounterRow#read` is
-its counterpart, and the port needs it, because an edit made in a pop-out
-window moves `Counter#value` and the row has to catch up. `#refresh_value` is
-its one internal caller.
-
-### `counter.lua` — the counter row
-
-| Widget | × | CSS | Signals | Notes |
-|---|---:|---|---|---|
-| `Adw.ExpanderRow` | 1 | `spin`, the counter's colour (`red`…`purple`, dynamic), `checked` (while ticked), `error` (while the name is empty) | `notify::expanded` → scroll into view after 50 ms | `title = name` |
-| `Gtk.Image` (prefix) | 1 | `drag-handle` | — | `drag-handle-symbolic`; hidden in select mode |
-| `Gtk.CheckButton` (prefix) | 1 | — | `notify::active` → set `checked`, add/remove `checked` | `visible = false` outside select mode |
-| `Gtk.Label` (suffix) | 1 | — | — | `visible = false` outside select mode; `margin_start = 18`, `halign = END` |
-| `Gtk.SpinButton` (suffix) | 1 | — | `notify::value` → write back and `queuewrite` | `new_with_range(0, 1000000, 1)`, first child `xalign = 1`, `valign = CENTER` |
-| `Gtk.DragSource` (controller, on the handle) | 1 | — | `prepare`, `drag-begin` | `actions = MOVE`, `propagation_phase = CAPTURE` |
-| `Gtk.DropTarget` (controller, on the row) | 1 | — | `drop` → reorder both orders | `actions = MOVE`, `formats` for the `Adw.ExpanderRow` gtype, `preload = true` |
-| `Gtk.ListBox` (drag icon) | 1 | `tally-list`, `boxed-list` | — | throwaway, sized to the row's allocation, `drag_highlight_row` |
-| `Gtk.DragIcon` | 1 | — | — | `get_for_drag`, hotspot at the grab point |
-
-`setcheckmode` is the state swap: handle+spin button out, check button+label
-in, row collapsed and `enable_expansion = false`. The suffix box gets
-`hexpand = true` so the label stays right-aligned once the spin button hides.
-
-### `counter.lua` — the drag preview row
-
-A throwaway `Adw.ExpanderRow` (no `spin` class) with the same title, the same
-colour class, the same expanded state, a `Gtk.Image` `drag-handle` prefix and a
-bare `Gtk.SpinButton` suffix carrying the same value. `createmenu` is attached
-to it in duplicate mode.
-
-### `counter.lua` — the expander menu
-
-| Widget | × | CSS | Signals | Notes |
-|---|---:|---|---|---|
-| `Adw.EntryRow` | 1 | — | `changed` | `_"Name"`; empty text adds `error` to the row and keeps the old name |
-| `Adw.ActionRow` (colour) | 1 | — | — | `_"Color"`, suffix the colour selector |
-| `Adw.ActionRow` (order) | 1 | — | — | `_"Reorder in List"`, suffix the order box |
-| `Adw.ActionRow` (pop-out) | 1 | — | — | `_"Show in a Separate Window"` |
-| `Gtk.Box` | 1 | — | — | horizontal, spacing 6, `halign = END`, `valign = CENTER` |
-| `Gtk.Button` | 4 | — | `clicked` | `move-top-symbolic` `_"Move counter to the top of the current list"`, `move-up-symbolic` `_"Move counter to just above the previous row"`, `move-down-symbolic` `_"Move counter to just below the next row"`, `move-bottom-symbolic` `_"Move counter to the bottom of the current list"` |
-| `Gtk.Button` (pop-out) | 1 | — | `clicked` | `pop-out-symbolic`, `_"Create a new window for this counter"`, `halign = END`, `hexpand = true` |
-
-Conditional: when attached to a drag preview (`duplicate`), every control is
-`sensitive = false` and **no handler is connected at all**. Up/down skip rows
-the filter has unmapped. Every reorder moves the list box child **and** the
-`counters` array, then `queuewrite`s and scrolls after 50 ms.
-
-### `counter.lua` — the colour selector
-
-One `Gtk.Box` with `colorselector` and **7** `Gtk.CheckButton`s, the six accent
-ones `group`ed on the first so exactly one is active, each carrying its colour
-class (the first unclassed) and `getcolorname` as its tooltip. The same widget
-is open-coded three times upstream: here, in the search bar (ungrouped,
-first button classed `system`) and in the new-counter dialog.
-
-### `main.lua` — the colour vocabulary
-
-`lib.getcolorname` returns `_"No color"` for nil and `"system"`, then
-`_"Red"`, `_"Orange"`, `_"Yellow"`, `_"Green"`, `_"Blue"`, `_"Purple"`.
-
-### `counter.lua` — the pop-out counter window
-
-| Widget | × | CSS | Signals / actions | Notes |
-|---|---:|---|---|---|
-| `Adw.ApplicationWindow` | 1 | `devel` (dead — `is_devel` is not in scope in this file) | `close-request` → destroy and drop the reference | `"<name> — Tally"`, `hide_on_close = true`, 400×300, min 360×294 |
-| `Adw.ToolbarView` | 1 | the counter's colour (dynamic) | — | `width_request = 300` |
-| `Adw.HeaderBar` | 1 | — | — | `title_widget` the window title |
-| `Adw.WindowTitle` | 1 | — | — | `(name, _"Tally")`; `title` bound BIDIRECTIONAL to the menu's entry `text` |
-| `Gtk.WindowHandle` | 1 | — | — | the whole face drags the window |
-| `Gtk.Box` | 3 | the middle one `popout` | — | outer vertical 36 + margins 24, number box vertical 24, button box horizontal 48 |
-| `Gtk.Label` | 1 | `numeric` | — | `width_request = 240`, `halign = CENTER` |
-| `Gtk.Button` | 2 | `circular` | `clicked` | `minus-symbolic` `_"Decrement by 1"` (insensitive at 0), `plus-symbolic` `_"Increment by 1"` (insensitive at 1000000) |
-| — | — | — | action `win.close` | `Gio.SimpleAction`, `enabled = true` |
-
-`popout` reassigns the counter's `spinbtn.on_notify.value` handler, which
-silently unhooks the list row's own handler for as long as the pop-out exists.
-
-### `data/` — the bundled icons
-
-16 symbolic action SVGs in a GResource under `/ca/vlacroix/Tally`:
-`check-mark`, `check-round-outline`, `cross-large-circle-outline`, `delete`,
-`drag-handle`, `loupe-large`, `menu-large`, `minus`, `move-bottom`,
-`move-down`, `move-top`, `move-up`, `plus-large`, `plus`, `pop-out`, `tally`
-(all `-symbolic`). `cross-large-circle-outline-symbolic` is bundled and
-referenced nowhere in the Lua.
-
-### `main.c`, `po/` — locale
-
-`setlocale(LC_ALL, "")`, `bindtextdomain("messages", "/app/share/locale")`,
-`textdomain("messages")`, `gettext` exposed to Lua as `lib.gettext` and aliased
-`_` in both Lua files. 43 msgids in `po/MESSAGES.pot`; catalogues for `fr`,
-`id`, `it`. See `translation-parity.md`.
-
-### App metadata and packaging
-
-Not widgets, but part of the app as a user installs it: four icon SVGs
-(`ca.vlacroix.Tally.svg`, `-symbolic.svg` and the two `.Devel` variants), two
-`.desktop` files carrying translated `Name`/`Comment`/`Keywords` for
-`en`/`fr`/`id`/`it`, two AppStream `metainfo.xml` files with the whole release
-history, two Flatpak manifests, `COPYING`, `tally.doap`, `tally.png` and a
-GitHub Actions workflow.
-
-| Upstream | Port | State |
+| Upstream | → | Port |
 |---|---|---|
-| `icons/ca.vlacroix.Tally.svg`, `-symbolic.svg`, `.Devel.svg`, `.Devel-symbolic.svg` | `data/icons/hicolor/{scalable,symbolic}/apps/org.rubygtkproject.Tally*.svg` | ported, byte-identical |
-| `data/tally.gresource.xml` (16 action icons) | `data/icons/hicolor/scalable/actions/*.svg` + `lib/tally/icons.rb` | ported as files on the theme search path |
-| `ca.vlacroix.Tally.desktop`, `.Devel.desktop` | `data/org.rubygtkproject.Tally.desktop`, `.Devel.desktop` | ported, byte-identical but for `Icon=` |
-| `ca.vlacroix.Tally.metainfo.xml`, `.Devel.metainfo.xml` | `data/org.rubygtkproject.Tally.metainfo.xml`, `.Devel.metainfo.xml` | ported; id, bugtracker and launchable retargeted |
-| `COPYING` | `COPYING` | ported verbatim, listed in the gemspec |
-| `Makefile` xgettext / msgmerge rules | `rakelib/gettext.rake` (`rake pot`, `rake po`, `rake pot:check`) | ported |
-| `Makefile` msgfmt rule | — | does not apply: `Tally::Locale` reads `po/*.po` directly, so there is no `.mo` to build |
-| `ca.vlacroix.Tally.json`, `.Devel.json` | — | **not ported, closed as not applicable** (below) |
-| `tally.doap`, `tally.png`, `.github/workflows/ci.yml` | — | project furniture, not application components |
+| `main.c` (`lua_gettext`, `bindtextdomain`, `textdomain`) | → | `lib/tally/locale.rb` |
+| `main.c` (`lua_get_is_devel`, `lua_get_app_id`, `lua_get_app_ver`) | → | `lib/tally/application.rb`, `lib/tally/metainfo.rb` |
+| `main.c` (`main()`'s load-failure branch) | → | **nothing** |
+| `main.lua` app object, accels, `quit` action, `on_activate`/`on_startup`/`on_shutdown` | → | `lib/tally/application.rb` |
+| `main.lua` GResource load + `data/tally.gresource.xml` + `Makefile` icon install | → | `lib/tally/icons.rb`, `data/icons/hicolor/**` |
+| `main.lua` `aboutwin` | → | `lib/tally/about_dialog.rb` |
+| `main.lua` `newshortcutwindow` | → | `lib/tally/shortcuts_dialog.rb` |
+| `main.lua` `tallymenu` | → | `lib/tally/main_menu.rb` |
+| `main.lua` `window` class, `refreshtoolbar`, check/delete mode | → | `lib/tally/main_window.rb` |
+| `main.lua` `lbox` / `clamp` / `multi` / `scrolledwin`, `enlarge`, `shrink`, `scrollbottom` | → | `lib/tally/counter_list.rb` |
+| `main.lua` searchbar block | → | `lib/tally/search_bar.rb` |
+| `main.lua` `statuspage` | → | `lib/tally/empty_state.rb` |
+| `main.lua` `window:tallydialog` | → | `lib/tally/new_counter_dialog.rb` |
+| `main.lua` `readcfg`/`writecfg`/`lib.queuewrite`/dir bootstrap | → | `lib/tally/store.rb`, `lib/tally/lua_config.rb` |
+| `main.lua` `lib.getcolorname` + the colour vocabulary repeated in 4 places | → | `lib/tally/colors.rb` |
+| `main.lua` searchbar colour box + dialog colour box + `counter:colorrow`/`gencolorcheck` | → | `lib/tally/color_selector.rb` |
+| `main.lua` `cssbase`/`csslight`/`cssdark` + provider swap | → | `lib/tally/styles.rb` |
+| `counter.lua` `counter` fields, `counters`, `counterrows`, `serialize`, `delete` | → | `lib/tally/counter.rb` |
+| `counter.lua` `counter` constructor, `read`, `setcheckmode`, drag source/target | → | `lib/tally/counter_row.rb` |
+| `counter.lua` `counter:createmenu` | → | `lib/tally/counter_menu.rb` |
+| `counter.lua` `counter:popout` | → | `lib/tally/counter_window.rb` |
+| `counter.lua` `counter:duplicate` | → | `lib/tally/counter_drag_row.rb` |
+| `ca.vlacroix.Tally.metainfo.xml` (+ `.Devel`) | → | `data/org.rubygtkproject.Tally.metainfo.xml` (+ `.Devel`) |
+| `ca.vlacroix.Tally.desktop` (+ `.Devel`) | → | `data/org.rubygtkproject.Tally.desktop` (+ `.Devel`) |
+| `icons/ca.vlacroix.Tally{,.Devel}{,-symbolic}.svg` | → | `data/icons/hicolor/{scalable,symbolic}/apps/org.rubygtkproject.Tally*.svg` |
+| `po/{fr,id,it}.po`, `po/MESSAGES.pot` | → | `po/{fr,id,it}.po`, `po/MESSAGES.pot` |
+| `Makefile` (`install`, `.mo` build, `pot`/`po` rules) | → | `flake.nix` install phase, `rakelib/gettext.rake` |
+| `ca.vlacroix.Tally.json`, `ca.vlacroix.Tally.Devel.json` | → | **nothing** |
+| `.github/workflows/ci.yml` (flatpak-builder) | → | **nothing** |
+| `tally.doap` | → | **nothing** |
+| `tally.png` | → | **nothing** |
 
-**The Flatpak manifests are closed as not ported.** Both build Lua 5.4 and
-LuaGObject from source inside `org.gnome.Sdk` and then run upstream's
-`Makefile`; none of that describes a Ruby application, and a manifest for this
-port would have to build the ruby-gnome C extensions against the GNOME SDK —
-a different piece of work from porting Tally. The port is packaged as a gem
-and as the Nix flake in this repository instead. `Tally::Application`'s
-`DEVEL_SUFFIX` therefore no longer claims to match a manifest: it matches the
-`.Devel` desktop entry, metainfo file and icon, which are all shipped, and its
-class comment says exactly that.
+Four upstream files have nothing opposite them. They are carried into
+`component-parity.md` as gaps, not noted here and forgotten.
+
+---
+
+## The inventory
+
+Ordered the way a user meets the app: the window, its list, its rows, then the
+dialogs. `×` is the number of live instances, not textual occurrences — a
+widget built by a shared factory or in a loop is counted at its call sites.
+
+### `main.lua` window class → `lib/tally/main_window.rb` — the one and only main window
+
+| Widget | × | CSS | Signals | Notes |
+|---|---:|---|---|---|
+| `Adw.ApplicationWindow` | 1 | `devel` (only on a devel build) | `close-request` | 500×600 default, 360×294 minimum; geometry restored from the config |
+| `Adw.ToolbarView` | 1 | — | — | `top_bar_style` flipped between `FLAT` and `RAISED_BORDER` by `refreshtoolbar` *and* by the breakpoint |
+| `Adw.HeaderBar` | 1 | — | — | holds all five buttons |
+| `Adw.WindowTitle` | 1 | — | — | `("Tally", "")` |
+| `Gtk.Button` (new) | 1 | — | `clicked` → opens the new-counter dialog | hidden in select mode |
+| `Gtk.Button` (delete) | 1 | `destructive-action` | `clicked` → deletes every ticked counter, writes, leaves select mode | starts `visible = false` |
+| `Gtk.ToggleButton` (select) | 1 | — | `notify::active` → swaps the header bar and every row | tooltip changes with state; hidden when the list is empty |
+| `Gtk.ToggleButton` (search) | 1 | — | bound bidirectionally to the search bar's `search-mode-enabled` | — |
+| `Gtk.MenuButton` | 1 | — | — | `menu_model` = the two-item `tallymenu`; grabs focus at the end of construction |
+| `Adw.Breakpoint` | 1 | — | `apply` → shrink, `unapply` → enlarge | `max-width: 400px` |
+| `Gio.SimpleAction` `win.shortcuts` | 1 | — | `activate` | `<Ctrl><Shift>question` |
+| `Gio.SimpleAction` `win.about` | 1 | — | `activate` | `F1` |
+
+Repeaters: none. Conditional: the `devel` class; the delete button's
+visibility; the select button's visibility.
+
+### `main.lua` list block → `lib/tally/counter_list.rb` — the scrolling counter list
+
+| Widget | × | CSS | Signals | Notes |
+|---|---:|---|---|---|
+| `Gtk.ScrolledWindow` | 1 | — | — | `hscrollbar_policy = NEVER`; its interposed `Gtk.Viewport` is what `scroll_to` is called on |
+| `Adw.MultiLayoutView` | 1 | — | — | one slot named `list`, two layouts |
+| `Adw.Layout` (wide) | 1 | — | — | wraps the slot in the clamp |
+| `Adw.Layout` (narrow) | 1 | — | — | the bare slot |
+| `Adw.LayoutSlot` | 2 | — | — | one per layout, both named `list` |
+| `Adw.Clamp` | 1 | — | — | `maximum_size = 600`, margins 24/24/12/12 |
+| `Gtk.ListBox` | 1 | `tally-list`, and `boxed-list` ⇄ `separators` swapped by the breakpoint | `row-activated` → ticks the row in select mode | `selection_mode = NONE`, `valign = START`, hidden while empty, custom filter func |
+
+Repeaters: the rows, one `CounterRow` per counter.
+Conditional: `boxed-list`/`separators` by layout; the whole box hidden at zero rows.
+
+### `counter.lua` constructor → `lib/tally/counter_row.rb` — one counter in the list
+
+| Widget | × | CSS | Signals | Notes |
+|---|---:|---|---|---|
+| `Adw.ExpanderRow` | 1 | `spin`; one of `red`/`orange`/`yellow`/`green`/`blue`/`purple` (dynamic, swapped on recolour); `checked` while ticked; `error` while the name is empty | `notify::expanded` → scroll into view after 50 ms | `enable_expansion = false` in select mode |
+| `Gtk.Image` (drag handle) | 1 | `drag-handle` | — | prefix; hidden in select mode |
+| `Gtk.CheckButton` | 1 | — | `notify::active` → sets `checked`, toggles the `checked` class | prefix; hidden outside select mode |
+| `Gtk.Label` (count) | 1 | — | — | suffix; `margin_start = 18`, `halign = END`; visible only in select mode |
+| `Gtk.SpinButton` | 1 | — | `notify::value` → writes the counter and queues a save | suffix; range 0–1,000,000 step 1; its `GtkText` child is `xalign = 1` |
+| `Gtk.DragSource` (controller) | 1 | — | `prepare`, `drag-begin` | on the handle, `CAPTURE` phase, `MOVE` |
+| `Gtk.DropTarget` (controller) | 1 | — | `drop` → reorders both the list box and the counter order | on the row, `MOVE`, `preload`, gtype `Adw.ExpanderRow` |
+| `Gtk.DragIcon` | 1 | — | — | hosts the drag preview |
+| `Gtk.ListBox` (drag preview) | 1 | `tally-list`, `boxed-list` | — | throwaway, sized to the row's allocation |
+
+Repeaters: none within the row. Conditional: the colour class exists only when
+the counter has a colour; the `checked` and `error` classes are runtime-only.
+
+### `counter.lua:duplicate` → `lib/tally/counter_drag_row.rb` — the drag preview row
+
+| Widget | × | CSS | Signals | Notes |
+|---|---:|---|---|---|
+| `Adw.ExpanderRow` | 1 | the counter's colour class | — | same title, same expanded state |
+| `Gtk.Image` | 1 | `drag-handle` | — | prefix |
+| `Gtk.SpinButton` | 1 | — | — | suffix, same value, no handler |
+
+It also attaches a `CounterMenu` in duplicate mode, which contributes the four
+rows below with every control desensitised and nothing connected.
+
+### `counter.lua:createmenu` → `lib/tally/counter_menu.rb` — the disclosure under a row
+
+| Widget | × | CSS | Signals | Notes |
+|---|---:|---|---|---|
+| `Adw.EntryRow` (Name) | 1 | — | `changed` → renames, or marks the row `error` when emptied | desensitised in the drag preview |
+| `Adw.ActionRow` (Color) | 1 | — | — | suffix is a radio `ColorSelector` |
+| `Adw.ActionRow` (Reorder in List) | 1 | — | — | suffix is the order box |
+| `Adw.ActionRow` (Show in a Separate Window) | 1 | — | — | suffix is the pop-out button |
+| `Gtk.Box` (order box) | 1 | — | — | horizontal, spacing 6, `halign END`, `valign CENTER` |
+| `Gtk.Button` (top / up / down / bottom) | 4 | — | `clicked` → moves the counter, skipping filter-hidden rows, then scrolls after 50 ms | one shared factory, four call sites |
+| `Gtk.Button` (pop-out) | 1 | — | `clicked` → presents the counter's own window | `halign END`, `hexpand`, `valign CENTER` |
+
+### `counter.lua:colorrow` + two open-coded copies → `lib/tally/color_selector.rb`
+
+| Widget | × | CSS | Signals | Notes |
+|---|---:|---|---|---|
+| `Gtk.Box` | 1 per site | `colorselector` | — | horizontal, spacing 6; three sites: search bar, new-counter dialog, counter menu |
+| `Gtk.CheckButton` | 7 per site | `system` (search bar only); `red`/`orange`/`yellow`/`green`/`blue`/`purple` | `notify::active` | tooltip is the translated colour name; grouped onto the first button in radio mode, ungrouped in the search bar |
+
+Repeater: the seven buttons are a loop over `["system", red, orange, yellow,
+green, blue, purple]`, and the box is instantiated three times — 21 check
+buttons on screen with one counter in the list and the search bar open.
+
+### `main.lua` searchbar block → `lib/tally/search_bar.rb`
+
+| Widget | × | CSS | Signals | Notes |
+|---|---:|---|---|---|
+| `Gtk.SearchBar` | 1 | — | `notify::search-mode-enabled` → clears every colour tick | `key_capture_widget` set; `connect_entry`; bound to the header's search toggle |
+| `Gtk.Box` | 1 | — | — | vertical, spacing 6, 6px top/bottom margins |
+| `Gtk.SearchEntry` | 1 | — | `search-changed` → invalidates the list filter | placeholder `Filter by name…` |
+| `ColorSelector` (multi) | 1 | `colorselector` | — | see above |
+
+### `main.lua` statuspage → `lib/tally/empty_state.rb`
+
+| Widget | × | CSS | Signals | Notes |
+|---|---:|---|---|---|
+| `Adw.StatusPage` | 1 | — | — | title `No Counters`, icon `tally-symbolic` |
+| `Gtk.Button` | 1 | `suggested-action`, `pill` | `clicked` → opens the new-counter dialog | 40px side margins |
+
+### `main.lua:tallydialog` → `lib/tally/new_counter_dialog.rb`
+
+| Widget | × | CSS | Signals | Notes |
+|---|---:|---|---|---|
+| `Adw.Dialog` | 1 | — | — | title `New Counter` |
+| `Adw.ToolbarView` | 1 | — | — | — |
+| `Adw.HeaderBar` | 1 | — | — | no title widget |
+| `Gtk.Box` | 1 | — | — | vertical, spacing 12, 12px margins all round |
+| `Gtk.Entry` | 1 | `error` while empty (dynamic) | `changed` → validates | placeholder `Name`, `halign FILL` |
+| `ColorSelector` (radio) | 1 | `colorselector` | — | see above |
+| `Gtk.Button` | 1 | `suggested-action` | `clicked` → creates the counter and closes | `halign CENTER`, starts insensitive |
+| `Adw.ButtonContent` | 1 | — | — | icon `plus-large-symbolic`, label `Add to List` |
+
+### `counter.lua:popout` → `lib/tally/counter_window.rb` — one counter's own window
+
+| Widget | × | CSS | Signals | Notes |
+|---|---:|---|---|---|
+| `Adw.ApplicationWindow` | 1 | `devel` (devel build only) | `close-request` → destroys | 400×300 default, 360×294 minimum, `hide_on_close` |
+| `Adw.ToolbarView` | 1 | the counter's colour class (dynamic) | — | `width_request = 300` |
+| `Adw.HeaderBar` | 1 | — | — | — |
+| `Adw.WindowTitle` | 1 | — | — | `title` bound bidirectionally to the row's Name entry; subtitle `Tally` |
+| `Gtk.WindowHandle` | 1 | — | — | lets the whole face drag the window |
+| `Gtk.Box` (outer) | 1 | — | — | vertical, spacing 36, 24px margins, centred |
+| `Gtk.Box` (numbers) | 1 | `popout` | — | vertical, spacing 24 — this is what scales the type to 300% |
+| `Gtk.Label` | 1 | `numeric` | — | `width_request = 240`, centred |
+| `Gtk.Box` (buttons) | 1 | — | — | horizontal, spacing 48, centred |
+| `Gtk.Button` (−) | 1 | `circular` | `clicked` → decrements | insensitive at 0 |
+| `Gtk.Button` (+) | 1 | `circular` | `clicked` → increments | insensitive at 1,000,000 |
+| `Gio.SimpleAction` `win.close` | 1 | — | `activate` | `<Ctrl>W` |
+
+### `main.lua:newshortcutwindow` → `lib/tally/shortcuts_dialog.rb`
+
+Upstream: one `Gtk.ShortcutsWindow`, one `Gtk.ShortcutsSection`, two
+`Gtk.ShortcutsGroup` (`Main Window`, `Counter Window`), five
+`Gtk.ShortcutsShortcut`:
+
+| Group | Title | action_name | Accelerator |
+|---|---|---|---|
+| Main Window | Quit Application | `app.quit` | `<Ctrl>Q` |
+| Main Window | Keyboard Shortcuts | `win.shortcuts` | `<Ctrl><Shift>question` |
+| Main Window | About Tally | `app.about` | `F1` |
+| Counter Window | Quit Application | `app.quit` | `<Ctrl>Q` |
+| Counter Window | Close Window | `win.close` | `<Ctrl>W` |
+
+Two upstream defects recorded here because the port has to decide about both:
+
+- the section's `title = app_title` reads a **nil global** — upstream's section is untitled.
+- `app.about` names **no registered action**; upstream registers `win.about` and binds F1 to `win.about`, so upstream's About row is inert.
+
+### `main.lua` app object → `lib/tally/application.rb`
+
+| Thing | Value |
+|---|---|
+| Application | `Adw.Application`, `resource_base_path = /ca/vlacroix/Tally` |
+| Accelerators | `win.shortcuts` `<Ctrl><Shift>question`; `win.about` `F1`; `win.close` `<Ctrl>W`; `app.quit` `<Ctrl>Q` |
+| Actions | `app.quit` |
+| Signals | `activate` (present the existing window), `startup` (build and present), `shutdown` (write the config) |
+
+### `main.lua` styles → `lib/tally/styles.rb`
+
+Two `Gtk.CssProvider`s (base+light, base+dark) added to the display at priority
+1,000,000 and swapped on `Adw.StyleManager::notify::dark`.
+
+CSS classes defined by the app's own stylesheet, read out of the Lua by hand:
+
+`colorselector`, `system`, `red`, `orange`, `yellow`, `green`, `blue`,
+`purple`, `tally-list`, `popout`.
+
+Classes attached but supplied by GTK/libadwaita, not by this stylesheet:
+`boxed-list`, `separators`, `spin`, `checked`, `error`, `drag-handle`,
+`circular`, `numeric`, `pill`, `suggested-action`, `destructive-action`,
+`devel`.
+
+### Non-widget components with no widget owner
+
+| Component | Upstream | Port |
+|---|---|---|
+| Icon bundle (16 symbolic action icons) | `data/tally.gresource.xml` + GResource load | `lib/tally/icons.rb` + `data/icons/hicolor/scalable/actions` |
+| Application icon, 4 variants | `icons/*.svg` + `Makefile install` | `data/icons/hicolor/{scalable,symbolic}/apps` + `flake.nix` |
+| Desktop entry ×2 | `ca.vlacroix.Tally{,.Devel}.desktop` | `data/org.rubygtkproject.Tally{,.Devel}.desktop` |
+| AppStream metainfo ×2, 15 releases | `ca.vlacroix.Tally{,.Devel}.metainfo.xml` | `data/org.rubygtkproject.Tally{,.Devel}.metainfo.xml` |
+| Catalogues | `po/{fr,id,it}.po` + `.pot` | same three + `.pot` |
+| Install/build | `Makefile` | `flake.nix`, `rakelib/gettext.rake`, the gemspec |
+| **Flatpak manifest ×2** | `ca.vlacroix.Tally{,.Devel}.json` | **absent** |
+| **CI that builds it** | `.github/workflows/ci.yml` | **absent** |
+| **Project metadata** | `tally.doap` | **absent** |
+| **README screenshot** | `tally.png` | **absent** |
 
 ## Totals
 
-26 components. 24 have a port counterpart; 2 do not, and both are closed
-rather than outstanding:
+| Axis | Upstream distinct | Port distinct | In upstream, not in the port |
+|---|---:|---:|---:|
+| Widget types | 30 | 29 | 4 (`Gtk.ShortcutsWindow`, `Gtk.ShortcutsSection`, `Gtk.ShortcutsGroup`, `Gtk.ShortcutsShortcut` — all replaced by the `Adw.Shortcuts*` family) |
+| Live widget instances | — | — | 0 |
+| App-defined CSS classes | 10 | 10 | 0 |
+| Platform CSS classes attached | 12 | 12 | 0 |
+| Signals | 18 | 18 | 0 |
+| Actions | 4 | 4 | 0 |
+| Non-widget components | 10 | 6 | **4** |
 
-- the two Flatpak manifests, closed as not applicable (above);
-- upstream's `msgfmt` rule, closed as not applicable (the port has no `.mo`
-  step).
+Read that last row, not the ones above it. The widget tree is complete; what
+is absent is everything that makes the app an *installed application* the way
+upstream ships it. The comparison, and the verdict, are in
+`component-parity.md`.
