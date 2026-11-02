@@ -1,0 +1,131 @@
+{
+	"name": "tally-gems",
+	"buildsystem": "simple",
+	"build-commands": [
+		"gem install --local --no-document --ignore-dependencies native-package-installer-1.1.9.gem",
+		"gem install --local --no-document --ignore-dependencies pkg-config-1.6.5.gem",
+		"gem install --local --no-document --ignore-dependencies glib2-4.3.9.gem",
+		"gem install --local --no-document --ignore-dependencies rake-13.4.2.gem",
+		"gem install --local --no-document --ignore-dependencies atk-4.3.9.gem",
+		"gem install --local --no-document --ignore-dependencies json-3.0.2.gem",
+		"gem install --local --no-document --ignore-dependencies matrix-0.4.3.gem",
+		"gem install --local --no-document --ignore-dependencies red-colors-0.5.0.gem",
+		"gem install --local --no-document --ignore-dependencies cairo-1.18.5.gem",
+		"gem install --local --no-document --ignore-dependencies cairo-gobject-4.3.9.gem",
+		"gem install --local --no-document --ignore-dependencies fiddle-1.1.8.gem",
+		"gem install --local --no-document --ignore-dependencies gobject-introspection-4.3.9.gem",
+		"gem install --local --no-document --ignore-dependencies gio2-4.3.9.gem",
+		"gem install --local --no-document --ignore-dependencies gdk_pixbuf2-4.3.9.gem",
+		"gem install --local --no-document --ignore-dependencies pango-4.3.9.gem",
+		"gem install --local --no-document --ignore-dependencies gdk4-4.3.9.gem",
+		"gem install --local --no-document --ignore-dependencies graphene1-4.3.9.gem",
+		"gem install --local --no-document --ignore-dependencies gsk4-4.3.9.gem",
+		"gem install --local --no-document --ignore-dependencies gtk4-4.3.9.gem",
+		"gem install --local --no-document --ignore-dependencies adwaita-4.3.9.gem"
+	],
+	"cleanup": [
+		"/lib/ruby/gems/*/cache"
+	],
+	"sources": [
+		{
+			"type": "file",
+			"url": "https://rubygems.org/downloads/native-package-installer-1.1.9.gem",
+			"sha256": "fbb41b6b22750791a4304f0a0aeea3dd837668892117f49c4caf2e8e0f4e792f"
+		},
+		{
+			"type": "file",
+			"url": "https://rubygems.org/downloads/pkg-config-1.6.5.gem",
+			"sha256": "33f9f81c5322983d22b439b8b672f27777b406fea23bfec74ff14bbeb42ec733"
+		},
+		{
+			"type": "file",
+			"url": "https://rubygems.org/downloads/glib2-4.3.9.gem",
+			"sha256": "32c1db447e812e5e34f9e62f1f2103e2cb4a5d0d03217a886b2a2877639549cd"
+		},
+		{
+			"type": "file",
+			"url": "https://rubygems.org/downloads/rake-13.4.2.gem",
+			"sha256": "cb825b2bd5f1f8e91ca37bddb4b9aaf345551b4731da62949be002fa89283701"
+		},
+		{
+			"type": "file",
+			"url": "https://rubygems.org/downloads/atk-4.3.9.gem",
+			"sha256": "f6d43be5dc1546a3a096124c0ec7518c266c225c88a91fd8ac857463beea3469"
+		},
+		{
+			"type": "file",
+			"url": "https://rubygems.org/downloads/json-3.0.2.gem",
+			"sha256": "8e6d7e7b11384c21230430cef90b71f14849a34a1f4452796670f7c981bd19df"
+		},
+		{
+			"type": "file",
+			"url": "https://rubygems.org/downloads/matrix-0.4.3.gem",
+			"sha256": "a0d5ab7ddcc1973ff690ab361b67f359acbb16958d1dc072b8b956a286564c5b"
+		},
+		{
+			"type": "file",
+			"url": "https://rubygems.org/downloads/red-colors-0.5.0.gem",
+			"sha256": "0a33f603d1843035fe467485ba4461022e3b5a2de9a0f0371e7cc0939b99ad19"
+		},
+		{
+			"type": "file",
+			"url": "https://rubygems.org/downloads/cairo-1.18.5.gem",
+			"sha256": "e57356141c91748061b10260e185735bd6e2288ab81ab300a6de3adfa270a623"
+		},
+		{
+			"type": "file",
+			"url": "https://rubygems.org/downloads/cairo-gobject-4.3.9.gem",
+			"sha256": "f093931812898edd87416691b8e3315c61a0c8a6d531519fbc6c64e97b6d85c8"
+		},
+		{
+			"type": "file",
+			"url": "https://rubygems.org/downloads/fiddle-1.1.8.gem",
+			"sha256": "7fa8ee3627271497f3add5503acdbc3f40b32f610fc1cf49634f083ef3f32eee"
+		},
+		{
+			"type": "file",
+			"url": "https://rubygems.org/downloads/gobject-introspection-4.3.9.gem",
+			"sha256": "509c0e69b99fb171683f28ea3172f82a46950b032f4628986330418771bdd56b"
+		},
+		{
+			"type": "file",
+			"url": "https://rubygems.org/downloads/gio2-4.3.9.gem",
+			"sha256": "6ddcbaec05beb20332fcfd1ca598dcf46392541aeb0b5d4b8df2306adffc0acc"
+		},
+		{
+			"type": "file",
+			"url": "https://rubygems.org/downloads/gdk_pixbuf2-4.3.9.gem",
+			"sha256": "1b78f2b21de7d4dcef6b351895d1bc22099a53d987f005d4b09f62b6816b3cbc"
+		},
+		{
+			"type": "file",
+			"url": "https://rubygems.org/downloads/pango-4.3.9.gem",
+			"sha256": "1f7b023adec7f3d692d7f6a6c87994231dd597802761a9a42debebe69f677a98"
+		},
+		{
+			"type": "file",
+			"url": "https://rubygems.org/downloads/gdk4-4.3.9.gem",
+			"sha256": "232b8350ad148bd2a45661cc90638d782fd439c872d8eb866f2c5fbb800c8d4b"
+		},
+		{
+			"type": "file",
+			"url": "https://rubygems.org/downloads/graphene1-4.3.9.gem",
+			"sha256": "3ebaeb7bcf85244a9db5d7e7ced32493d5d786e7fd8ed840ce2df9d85f2c8c05"
+		},
+		{
+			"type": "file",
+			"url": "https://rubygems.org/downloads/gsk4-4.3.9.gem",
+			"sha256": "8f1f560f1ec08fa2c1a503d468c705ff254db4633ca2d72c93654e2a180b2ea6"
+		},
+		{
+			"type": "file",
+			"url": "https://rubygems.org/downloads/gtk4-4.3.9.gem",
+			"sha256": "3e749542e347ef703e6691552047254612ef54d430b308264e96f330fd3e453b"
+		},
+		{
+			"type": "file",
+			"url": "https://rubygems.org/downloads/adwaita-4.3.9.gem",
+			"sha256": "09271d077b9c9d3a3919bde40bc475e58fd31f83b319f4b305bfc4dc086fcee8"
+		}
+	]
+}

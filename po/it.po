@@ -35,6 +35,14 @@ msgstr "Contatore"
 msgid "translator-credits"
 msgstr "Albano Battistella"
 
+#: ../lib/tally/application.rb:68
+msgid ""
+"An unrecoverable error occurred when loading Tally, preventing the program "
+"from starting.\n"
+msgstr ""
+"Si è verificato un errore irrecuperabile durante il caricamento di "
+"Contatore, impedendo l'avvio del programma.\n"
+
 #: ../lib/tally/colors.rb:25
 msgid "No color"
 msgstr "Nessun colore"
@@ -206,11 +214,3 @@ msgstr "Chiudi Finestra"
 #~ "<p>Sono stati apportati diversi miglioramenti per consentire l'utilizzo "
 #~ "di Contatore con un lettore di schermo. Sono state aggiunte scorciatoie "
 #~ "da tastiera per chiudere le finestre dei contatori.</p>\n"
-
-#, c-format
-#~ msgid ""
-#~ "An unrecoverable error occurred when loading Tally, preventing the "
-#~ "program from starting.\n"
-#~ msgstr ""
-#~ "Si è verificato un errore irrecuperabile durante il caricamento di "
-#~ "Contatore, impedendo l'avvio del programma.\n"

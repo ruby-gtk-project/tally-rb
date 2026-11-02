@@ -34,6 +34,12 @@ msgstr ""
 msgid "translator-credits"
 msgstr ""
 
+#: ../lib/tally/application.rb:68
+msgid ""
+"An unrecoverable error occurred when loading Tally, preventing the program fro"
+"m starting.\n"
+msgstr ""
+
 #: ../lib/tally/colors.rb:25
 msgid "No color"
 msgstr ""

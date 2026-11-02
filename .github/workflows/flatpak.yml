@@ -1,0 +1,53 @@
+# Ported from .github/workflows/ci.yml, which is upstream's only workflow: one
+# job that runs flatpak-builder over ca.vlacroix.Tally.json inside Flathub's
+# GNOME 49 build image.
+#
+# Two deliberate differences.
+#
+# The branch is `ruby`, not `trunk` — `trunk` carries the upstream Lua and C
+# sources and has no Ruby manifest to build.
+#
+# Both manifests are built, where upstream builds only the release one. The
+# devel manifest is otherwise never exercised by anything: it differs from the
+# release manifest in its application id, its desktop entry, its metainfo and
+# the TALLY_DEVEL it sets, and every one of those is a thing that can be wrong
+# in a way no local run would show.
+name: Flatpak
+
+on:
+  push:
+    branches: [ruby]
+  pull_request:
+    branches: [ruby]
+  workflow_dispatch:
+
+jobs:
+  flatpak:
+    name: ${{ matrix.app-id }}
+    runs-on: ubuntu-latest
+
+    container:
+      image: ghcr.io/flathub-infra/flatpak-github-actions:gnome-49
+      # flatpak-builder needs to create its own sandbox for each build step.
+      options: --privileged
+
+    strategy:
+      # One manifest failing says nothing about the other, and the difference
+      # between them is exactly what this matrix is here to see.
+      fail-fast: false
+      matrix:
+        app-id:
+          - org.rubygtkproject.Tally
+          - org.rubygtkproject.Tally.Devel
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # The manifests live in data/, not the repository root, and their `dir`
+      # source is `..` — which flatpak-builder resolves against the manifest's
+      # own directory, so it is this checkout.
+      - uses: flatpak/flatpak-github-actions/flatpak-builder@v6
+        with:
+          bundle: ${{ matrix.app-id }}.flatpak
+          manifest-path: data/${{ matrix.app-id }}.json
+          cache-key: flatpak-builder-${{ matrix.app-id }}-${{ github.sha }}

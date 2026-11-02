@@ -38,6 +38,14 @@ msgstr "Compteur"
 msgid "translator-credits"
 msgstr "Victoria Lacroix <victoria@vtrlx.ca>"
 
+#: ../lib/tally/application.rb:68
+msgid ""
+"An unrecoverable error occurred when loading Tally, preventing the program "
+"from starting.\n"
+msgstr ""
+"Une érreur fatale est passée durant le chargement de Compteur, et "
+"l'application n'est pas capable de démarrer.\n"
+
 #: ../lib/tally/colors.rb:25
 msgid "No color"
 msgstr "Aucun couleur"
@@ -209,11 +217,3 @@ msgstr "Fermer la fenêtre"
 #~ "<p>L'application a été améliorée sur plusieurs fronts, permettant "
 #~ "l'utilisation d'un lecteur d'écran. Des raccourcis clavier ont étés "
 #~ "ajoutés.</p>\n"
-
-#, c-format
-#~ msgid ""
-#~ "An unrecoverable error occurred when loading Tally, preventing the "
-#~ "program from starting.\n"
-#~ msgstr ""
-#~ "Une érreur fatale est passée durant le chargement de Compteur, et "
-#~ "l'application n'est pas capable de démarrer.\n"

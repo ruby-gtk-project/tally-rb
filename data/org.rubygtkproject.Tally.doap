@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Ported from tally.doap.
+
+  Upstream's file declares five namespaces and uses three of them; the two it
+  does not use (rdfs and GNOME's doap-extensions) are left out here. The three
+  it keeps are spelled out in full: upstream writes the RDF namespace as
+  "http://w3.org/1999/02/22-rdf-syntax-ns#" and the DOAP one as
+  "htp://usefulinc.com/ns/doap#", neither of which is the namespace it means,
+  so every element in that file lands outside DOAP and a consumer reads an
+  empty project. The canonical URIs are used instead — a typo is not a
+  behaviour worth reproducing.
+
+  The URLs are the port's own. Upstream's download-page is its Flathub page;
+  this port is published as a gem, so its download page is its RubyGems page.
+  The project described here is the port; tally itself is the work of Victoria
+  Lacroix <hello@vtrlx.ca>, whose homepage upstream's doap gives and which is
+  kept below as the upstream homepage.
+-->
+<Project
+	xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+	xmlns:foaf="http://xmlns.com/foaf/0.1/"
+	xmlns="http://usefulinc.com/ns/doap#">
+
+	<name>tally-rb</name>
+	<shortdesc xml:lang="en">Count anything.</shortdesc>
+	<description>Keep, categorize, and organize a list of tally counters. A Ruby GTK4 and Libadwaita port of tally.</description>
+
+	<homepage rdf:resource="https://github.com/ruby-gtk-project/tally-rb" />
+	<download-page rdf:resource="https://rubygems.org/gems/tally-rb" />
+	<bug-database rdf:resource="https://github.com/ruby-gtk-project/tally-rb/issues" />
+
+	<programming-language>Ruby</programming-language>
+
+	<maintainer>
+		<foaf:Person>
+			<foaf:name>ruby-gtk-project</foaf:name>
+			<foaf:homepage rdf:resource="https://github.com/ruby-gtk-project" />
+		</foaf:Person>
+	</maintainer>
+</Project>

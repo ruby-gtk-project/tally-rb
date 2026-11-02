@@ -1,0 +1,59 @@
+{
+	"app-id": "org.rubygtkproject.Tally",
+	"runtime": "org.gnome.Platform",
+	"runtime-version": "49",
+	"sdk": "org.gnome.Sdk",
+	"command": "tally",
+	"finish-args": [
+		"--device=dri",
+		"--share=ipc",
+		"--socket=fallback-x11",
+		"--socket=wayland"
+	],
+	"cleanup": [
+		"/include",
+		"/lib/pkgconfig",
+		"/share/man",
+		"*.a",
+		"*.la"
+	],
+	"modules": [
+		"flatpak/ruby.json",
+		"flatpak/gems.json",
+		{
+			"name": "tally",
+			"buildsystem": "simple",
+			"build-commands": [
+				"mkdir -p /app/share/tally/data",
+				"cp -r lib po /app/share/tally/",
+				"cp -r data/icons /app/share/tally/data/",
+				"cp data/*.metainfo.xml /app/share/tally/data/",
+				"install -Dm755 exe/tally /app/share/tally/exe/tally",
+				"install -Dm755 tally-launcher /app/bin/tally",
+				"install -Dm644 data/org.rubygtkproject.Tally.desktop /app/share/applications/org.rubygtkproject.Tally.desktop",
+				"install -Dm644 data/org.rubygtkproject.Tally.metainfo.xml /app/share/metainfo/org.rubygtkproject.Tally.metainfo.xml",
+				"mkdir -p /app/share/icons",
+				"cp -r data/icons/hicolor /app/share/icons/"
+			],
+			"sources": [
+				{
+					"type": "dir",
+					"path": "..",
+					"skip": [
+						".git",
+						".flatpak-builder",
+						".build",
+						"tmp"
+					]
+				},
+				{
+					"type": "script",
+					"dest-filename": "tally-launcher",
+					"commands": [
+						"exec /app/bin/ruby -I/app/share/tally/lib /app/share/tally/exe/tally \"$@\""
+					]
+				}
+			]
+		}
+	]
+}

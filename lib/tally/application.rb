@@ -35,23 +35,43 @@ module Tally
   # (data/org.rubygtkproject.Tally.Devel.desktop), its own AppStream metainfo
   # and its own icon.
   #
-  # What the suffix does *not* match is a Flatpak manifest. Upstream ships
-  # ca.vlacroix.Tally.json and ca.vlacroix.Tally.Devel.json, which build Lua
-  # 5.4 and LuaGObject from source inside org.gnome.Sdk and then `make
-  # DEVEL=true`; none of that describes a Ruby application, and a manifest for
-  # this port would have to build the ruby-gnome C extensions against the
-  # GNOME SDK. Neither manifest is ported, and the port has no Flatpak build at
-  # all — it is packaged as a gem and as the Nix flake in this repository. See
-  # .reports/component-identification.md for the ledger entry.
+  # The suffix is also what the two Flatpak manifests are built around.
+  # Upstream ships ca.vlacroix.Tally.json and ca.vlacroix.Tally.Devel.json,
+  # identical but for the devel app id and the `make DEVEL=true` that sets the
+  # -DDEVEL compile flag; data/org.rubygtkproject.Tally.json and its .Devel
+  # companion are the same pair, building Ruby and the ruby-gnome gems against
+  # org.gnome.Sdk where upstream builds Lua 5.4 and LuaGObject, and the devel
+  # manifest's `--env=TALLY_DEVEL=1` stands where upstream's make flag does —
+  # which is the whole reason this is an environment variable and not a
+  # constant decided at install time.
   #
   # Upstream also sets resource_base_path and registers a GResource for its
   # icons; this port ships them as files and Icons adds that directory to the
   # icon theme instead.
   class Application
+    include Gettext
+
     APP_ID = "org.rubygtkproject.Tally"
     DEVEL_SUFFIX = ".Devel"
     DEVEL_ENV = "TALLY_DEVEL"
     TRUTHY = %w[1 true yes on].freeze
+
+    # main.c's load-failure branch. luaL_loadbuffer either returns LUA_OK, in
+    # which case main() calls the chunk and returns 0, or it fails and main()
+    # prints this one translated line to stderr and returns the Lua error code.
+    # The msgid is upstream's, byte for byte including the trailing newline, so
+    # the three catalogues in po/ already carry its translation.
+    #
+    # `N_` only marks it for extraction; the translation happens at the point
+    # of use in .boot, because a constant is frozen long before the locale is
+    # known.
+    LOAD_FAILURE = N_("An unrecoverable error occurred when loading Tally, preventing the program from starting.\n")
+
+    # Upstream returns lua_result itself, which is one of Lua's own codes
+    # (LUA_ERRSYNTAX, LUA_ERRMEM — 3 and 4). Those numbers mean nothing outside
+    # Lua, so the exit status here is the conventional 1; what carries over is
+    # that a load failure exits non-zero without a window ever appearing.
+    LOAD_FAILURE_STATUS = 1
 
     ACCELS = {
       "win.shortcuts" => ["<Ctrl><Shift>question"],
@@ -61,6 +81,48 @@ module Tally
     }.freeze
 
     def self.devel? = TRUTHY.include?(ENV.fetch(DEVEL_ENV, "").strip.downcase)
+
+    # The whole of upstream's main(): build the application, and run it if it
+    # built. Returns the process's exit status, which is what makes the one
+    # expression in exe/tally — `exit(Tally::Application.boot(ARGV))` — the
+    # same shape as `return lua_result`.
+    #
+    # What counts as a load failure is upstream's boundary, not a wider one.
+    # luaL_loadbuffer turns the program's own bytecode into something callable;
+    # it says nothing about the shared libraries the executable is linked
+    # against, which the dynamic loader has already resolved or died over
+    # before main() runs. The matching line here is building the object graph —
+    # the Gtk::Application and the window the store's counters are read into.
+    # Failures once the main loop is running are upstream's `lua_call`, which
+    # is unprotected, so they are not caught here either and keep their
+    # backtrace.
+    #
+    # The second line is this port's only addition to the branch, and it pays
+    # off upstream's own FIXME ("Handle each error case individually"): the
+    # translated sentence tells a user the app will not start, and nothing
+    # else, so the exception that caused it is named underneath where whoever
+    # has to fix it can read it.
+    def self.boot(argv = [], err: $stderr, **options)
+      build_application(err: err, **options).then do |application|
+        if application
+          application.run(argv).to_i
+        else
+          LOAD_FAILURE_STATUS
+        end
+      end
+    end
+
+    # Builds the application, or writes the load failure and answers nil. It is
+    # a method of its own so that the rescue covers only the build: wrapping
+    # the `run` above in it would make every error inside the main loop look
+    # like a program that failed to load.
+    def self.build_application(err: $stderr, **options)
+      new(**options).build
+    rescue ScriptError, StandardError => error
+      err.print(Locale.gettext(LOAD_FAILURE))
+      err.puts("#{error.class}: #{error.message}")
+      nil
+    end
 
     def initialize(store: Store.default, devel: devel_default)
       @store = store

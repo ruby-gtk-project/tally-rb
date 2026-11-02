@@ -67,7 +67,7 @@ mapping is many-to-many and is the thing to get right before any comparison.
 |---|---|---|
 | `main.c` (`lua_gettext`, `bindtextdomain`, `textdomain`) | → | `lib/tally/locale.rb` |
 | `main.c` (`lua_get_is_devel`, `lua_get_app_id`, `lua_get_app_ver`) | → | `lib/tally/application.rb`, `lib/tally/metainfo.rb` |
-| `main.c` (`main()`'s load-failure branch) | → | **nothing** |
+| `main.c` (`main()`'s load-failure branch) | → | `lib/tally/application.rb` (`.boot`), `exe/tally` |
 | `main.lua` app object, accels, `quit` action, `on_activate`/`on_startup`/`on_shutdown` | → | `lib/tally/application.rb` |
 | `main.lua` GResource load + `data/tally.gresource.xml` + `Makefile` icon install | → | `lib/tally/icons.rb`, `data/icons/hicolor/**` |
 | `main.lua` `aboutwin` | → | `lib/tally/about_dialog.rb` |
@@ -92,13 +92,12 @@ mapping is many-to-many and is the thing to get right before any comparison.
 | `icons/ca.vlacroix.Tally{,.Devel}{,-symbolic}.svg` | → | `data/icons/hicolor/{scalable,symbolic}/apps/org.rubygtkproject.Tally*.svg` |
 | `po/{fr,id,it}.po`, `po/MESSAGES.pot` | → | `po/{fr,id,it}.po`, `po/MESSAGES.pot` |
 | `Makefile` (`install`, `.mo` build, `pot`/`po` rules) | → | `flake.nix` install phase, `rakelib/gettext.rake` |
-| `ca.vlacroix.Tally.json`, `ca.vlacroix.Tally.Devel.json` | → | **nothing** |
-| `.github/workflows/ci.yml` (flatpak-builder) | → | **nothing** |
-| `tally.doap` | → | **nothing** |
-| `tally.png` | → | **nothing** |
+| `ca.vlacroix.Tally.json`, `ca.vlacroix.Tally.Devel.json` | → | `data/org.rubygtkproject.Tally{,.Devel}.json` (+ `data/flatpak/{ruby,gems}.json`) |
+| `.github/workflows/ci.yml` (flatpak-builder) | → | `.github/workflows/flatpak.yml` |
+| `tally.doap` | → | `data/org.rubygtkproject.Tally.doap` |
+| `tally.png` | → | `data/screenshot.png` (+ `test/shoot_screenshot.rb`, which regenerates it) |
 
-Four upstream files have nothing opposite them. They are carried into
-`component-parity.md` as gaps, not noted here and forgotten.
+Every upstream file now has something opposite it.
 
 ---
 
@@ -293,10 +292,10 @@ Classes attached but supplied by GTK/libadwaita, not by this stylesheet:
 | AppStream metainfo ×2, 15 releases | `ca.vlacroix.Tally{,.Devel}.metainfo.xml` | `data/org.rubygtkproject.Tally{,.Devel}.metainfo.xml` |
 | Catalogues | `po/{fr,id,it}.po` + `.pot` | same three + `.pot` |
 | Install/build | `Makefile` | `flake.nix`, `rakelib/gettext.rake`, the gemspec |
-| **Flatpak manifest ×2** | `ca.vlacroix.Tally{,.Devel}.json` | **absent** |
-| **CI that builds it** | `.github/workflows/ci.yml` | **absent** |
-| **Project metadata** | `tally.doap` | **absent** |
-| **README screenshot** | `tally.png` | **absent** |
+| Flatpak manifest ×2 | `ca.vlacroix.Tally{,.Devel}.json` | `data/org.rubygtkproject.Tally{,.Devel}.json`, `data/flatpak/{ruby,gems}.json` |
+| CI that builds it | `.github/workflows/ci.yml` | `.github/workflows/flatpak.yml` |
+| Project metadata | `tally.doap` | `data/org.rubygtkproject.Tally.doap` |
+| README screenshot | `tally.png` | `data/screenshot.png`, `test/shoot_screenshot.rb` |
 
 ## Totals
 

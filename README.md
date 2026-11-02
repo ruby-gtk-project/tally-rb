@@ -21,6 +21,20 @@ I've summarized my thoughts in [this blog post](https://dev.to/galtzo/hostile-ta
 
 ## 🌻 Synopsis
 
+![Tally](data/screenshot.png)
+
+_Count anything._
+
+A tally counter for the GNOME desktop, written in Ruby with GTK4 and
+Libadwaita. Keep, categorize, and organize a list of counters.
+
+The picture above is regenerated from the current code — it is not a snapshot
+someone took once — by running:
+
+```sh
+nix develop --command xvfb-run -a ruby test/shoot_screenshot.rb
+```
+
 ## 💡 Info you can shake a stick at
 
 | Tokens to Remember | [![Gem name][⛳️name-img]][⛳️gem-name] [![Gem namespace][⛳️namespace-img]][⛳️gem-namespace] |
@@ -114,6 +128,41 @@ If bundler is not being used to manage dependencies, install the gem by executin
 
 ```console
 gem install tally-rb
+```
+
+### Building a Flatpak
+
+The manifests are `data/org.rubygtkproject.Tally.json` and, for the
+development build, `data/org.rubygtkproject.Tally.Devel.json`. They build Ruby
+and the ruby-gnome gems against `org.gnome.Sdk` 49, where upstream's manifests
+build Lua 5.4 and LuaGObject.
+
+```sh
+flatpak-builder .build data/org.rubygtkproject.Tally.json --user --install --force-clean
+flatpak run org.rubygtkproject.Tally
+```
+
+To build and run the development version, add `.Devel` after the
+application's name. The devel build is the striped-header-bar one: its
+manifest sets `TALLY_DEVEL=1`, which is this port's stand-in for upstream's
+`-DDEVEL` compile flag, and it installs under its own application id so it can
+sit beside a release install.
+
+```sh
+flatpak-builder .build data/org.rubygtkproject.Tally.Devel.json --user --install --force-clean
+flatpak run org.rubygtkproject.Tally.Devel
+```
+
+The two manifests share `data/flatpak/ruby.json` (Ruby 3.4 and libyaml) and
+`data/flatpak/gems.json` (the twenty runtime gems, pinned by sha256 and
+installed in dependency order). Both are built on every push by
+`.github/workflows/flatpak.yml`.
+
+Running from a checkout instead needs no Flatpak at all — the Nix dev shell
+carries GTK4, Libadwaita and the gems:
+
+```sh
+nix develop --command ruby exe/tally
 ```
 
 ## ⚙️ Configuration

@@ -24,6 +24,7 @@
 # can show.
 
 require "fileutils"
+require "stringio"
 require "tmpdir"
 
 # A scratch config directory, so a run never reads or writes the real one.
@@ -388,6 +389,29 @@ GtkDriver.drive(Tally::Application.new, shots: SHOTS) do |d, app|
         fresh.saved_counters.map(&:color) == ["red", "blue"]
       end
       d.check("nothing is unreadable") { !fresh.unreadable? }
+    end
+  end
+
+  # main.c's load-failure branch, which is the one path a run of the app never
+  # reaches: the window has to fail to build for it to happen at all. The
+  # catalogue is the English one here, so the msgid is what comes back; what is
+  # being checked is that the sentence printed is upstream's own and that the
+  # status is non-zero.
+  d.step("a build that fails prints upstream's line and exits non-zero") do
+    Class.new(Tally::Application) do
+      def build = raise(LoadError, "cannot load such file -- tally/main_window")
+    end.then do |broken|
+      StringIO.new.then do |err|
+        d.check("the status is the load-failure one") do
+          broken.boot([], err: err) == Tally::Application::LOAD_FAILURE_STATUS
+        end
+        d.check("the first line is upstream's message") do
+          err.string.start_with?(Tally::Locale.gettext(Tally::Application::LOAD_FAILURE))
+        end
+        d.check("the exception is named underneath it") do
+          err.string.include?("LoadError: cannot load such file -- tally/main_window")
+        end
+      end
     end
   end
 end

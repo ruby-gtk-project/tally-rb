@@ -3,4 +3,7 @@
 
 require "tally"
 
-Tally::Application.new.build.run
+# `exit` with what boot answers, because upstream's main() returns either 0 or
+# the error code from loading its bytecode. Tally::Application.boot holds that
+# branch, including the translated line it writes to stderr.
+exit(Tally::Application.boot(ARGV))

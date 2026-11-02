@@ -37,6 +37,14 @@ msgstr "Penghitung"
 msgid "translator-credits"
 msgstr "Proficiency <proficiency@xmail.net>"
 
+#: ../lib/tally/application.rb:68
+msgid ""
+"An unrecoverable error occurred when loading Tally, preventing the program "
+"from starting.\n"
+msgstr ""
+"Terjadi kesalahan tak terpulihkan saat memuat Tally, sehingga program tidak "
+"bisa dimulai.\n"
+
 #: ../lib/tally/colors.rb:25
 msgid "No color"
 msgstr "Tak berwarna"
@@ -208,11 +216,3 @@ msgstr "Tutup Jendela"
 #~ "<p>Berbagai penyempurnaan telah dilakukan agar Tally dapat digunakan "
 #~ "dengan pembaca layar. Pintasan keyboard untuk menutup jendela penghitung "
 #~ "juga telah ditambahkan.</p>\n"
-
-#, c-format
-#~ msgid ""
-#~ "An unrecoverable error occurred when loading Tally, preventing the "
-#~ "program from starting.\n"
-#~ msgstr ""
-#~ "Terjadi kesalahan tak terpulihkan saat memuat Tally, sehingga program "
-#~ "tidak bisa dimulai.\n"
