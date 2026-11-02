@@ -30,8 +30,19 @@ module Tally
   # Lua and main.lua turns into the "devel" CSS class on both window kinds —
   # the striped header bar that says "this is not the app you installed". A
   # compile flag is no use in Ruby, so TALLY_DEVEL in the environment stands in
-  # for it, and it also moves the application id onto the .Devel suffix the
-  # Flatpak manifest uses, so a devel run has its own window grouping.
+  # for it, and it also moves the application id onto the .Devel suffix, so a
+  # devel run has its own window grouping, its own desktop entry
+  # (data/org.rubygtkproject.Tally.Devel.desktop), its own AppStream metainfo
+  # and its own icon.
+  #
+  # What the suffix does *not* match is a Flatpak manifest. Upstream ships
+  # ca.vlacroix.Tally.json and ca.vlacroix.Tally.Devel.json, which build Lua
+  # 5.4 and LuaGObject from source inside org.gnome.Sdk and then `make
+  # DEVEL=true`; none of that describes a Ruby application, and a manifest for
+  # this port would have to build the ruby-gnome C extensions against the
+  # GNOME SDK. Neither manifest is ported, and the port has no Flatpak build at
+  # all — it is packaged as a gem and as the Nix flake in this repository. See
+  # .reports/component-identification.md for the ledger entry.
   #
   # Upstream also sets resource_base_path and registers a GResource for its
   # icons; this port ships them as files and Icons adds that directory to the

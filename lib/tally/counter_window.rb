@@ -35,6 +35,7 @@ module Tally
       @name_entry = name_entry
       @on_close = on_close
       self.title = formatted_title
+      self.icon_name = application.application_id
       self.hide_on_close = true
       set_default_size(DEFAULT_WIDTH, DEFAULT_HEIGHT)
       set_size_request(MIN_WIDTH, MIN_HEIGHT)

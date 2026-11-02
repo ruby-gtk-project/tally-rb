@@ -158,6 +158,23 @@ module Tally
 
     def check_mode? = counter.checkmode
 
+    # Upstream's counter:read — push the counter's value back out into the
+    # widgets that show it. Nothing upstream calls it: counter.lua defines it
+    # directly after the constructor and then never uses it, because every
+    # edit upstream travels the other way, from the spin button into the field.
+    # It is live here, because this port's edits travel both ways — a pop-out
+    # window moves Counter#value and the row has to catch up — so the method
+    # upstream left dead is exactly the one the counter's change notification
+    # needs, and #refresh_value is its one internal caller.
+    def read
+      tap do
+        unless spin_button.value.to_i == counter.value
+          spin_button.value = counter.value
+        end
+        count_label.label = counter.value.to_s
+      end
+    end
+
     # Activating a row in select mode ticks it, so the whole row is a target
     # rather than just the box.
     def toggle_check
@@ -235,12 +252,7 @@ module Tally
         end
       end
 
-      def refresh_value
-        unless spin_button.value.to_i == counter.value
-          spin_button.value = counter.value
-        end
-        count_label.label = counter.value.to_s
-      end
+      def refresh_value = read
 
       def refresh_name
         self.title = counter.name

@@ -221,6 +221,17 @@ with a pending-write counter. The bootstrap do-block deletes a non-directory
 sitting at the `tally` path, creates the directory, and seeds the file with
 `return {}`.
 
+The port writes JSON instead, because `load()`ing a file out of a user's home
+directory is arbitrary code execution and only safe upstream because the file
+is inside a Flatpak sandbox. That change is **not** a data loss, and this is
+where the earlier inventory was wrong to leave it at "unless a one-way importer
+is written": the importer is written. `lib/tally/lua_config.rb` reads
+upstream's grammar without evaluating it — including `%q`'s hex floats, bare
+booleans and backslash-newline escapes — and `Store` imports once, keeps the
+Lua file as `tally.lua.bak`, and writes JSON over the original. A file that
+neither reader can parse makes `Store#unreadable?` true and `Store#write`
+refuse, so an unrecognised config is never overwritten with an empty one.
+
 ### `counter.lua` — the counter model
 
 Not widgets. Fields `name` (default `"unnamed"`), `value` (default 0), `color`
@@ -229,7 +240,12 @@ scalar field it finds, so `checked`/`checkmode` land on disk; `readcfg` only
 ever reads `name`/`value`/`color` back. Two module-level registries: `counters`
 (ordered, the serialization order) and `counterrows` (`Gtk.ListBoxRow` →
 counter). `getcolor()` answers `"system"` for nil. `counter:read()` exists and
-is never called.
+is never called upstream — nothing in either Lua file reaches it, because
+every upstream edit travels from the spin button into the field and never the
+other way. It is **ported and live** rather than dropped: `CounterRow#read` is
+its counterpart, and the port needs it, because an edit made in a pop-out
+window moves `Counter#value` and the row has to catch up. `#refresh_value` is
+its one internal caller.
 
 ### `counter.lua` — the counter row
 
@@ -319,18 +335,42 @@ referenced nowhere in the Lua.
 `_` in both Lua files. 43 msgids in `po/MESSAGES.pot`; catalogues for `fr`,
 `id`, `it`. See `translation-parity.md`.
 
-### App metadata and packaging — no port counterpart
+### App metadata and packaging
 
-Four icon SVGs (`ca.vlacroix.Tally.svg`, `-symbolic.svg` and the two `.Devel`
-variants), two `.desktop` files carrying translated `Name`/`Comment`/`Keywords`
-for `en`/`fr`/`id`/`it`, two AppStream `metainfo.xml` files with the whole
-release history, two Flatpak manifests, `COPYING`, `tally.doap`, `tally.png`
-and a GitHub Actions workflow. None of this is a widget; all of it is part of
-the app as a user installs it. See `component-parity.md` gaps 1–6.
+Not widgets, but part of the app as a user installs it: four icon SVGs
+(`ca.vlacroix.Tally.svg`, `-symbolic.svg` and the two `.Devel` variants), two
+`.desktop` files carrying translated `Name`/`Comment`/`Keywords` for
+`en`/`fr`/`id`/`it`, two AppStream `metainfo.xml` files with the whole release
+history, two Flatpak manifests, `COPYING`, `tally.doap`, `tally.png` and a
+GitHub Actions workflow.
+
+| Upstream | Port | State |
+|---|---|---|
+| `icons/ca.vlacroix.Tally.svg`, `-symbolic.svg`, `.Devel.svg`, `.Devel-symbolic.svg` | `data/icons/hicolor/{scalable,symbolic}/apps/org.rubygtkproject.Tally*.svg` | ported, byte-identical |
+| `data/tally.gresource.xml` (16 action icons) | `data/icons/hicolor/scalable/actions/*.svg` + `lib/tally/icons.rb` | ported as files on the theme search path |
+| `ca.vlacroix.Tally.desktop`, `.Devel.desktop` | `data/org.rubygtkproject.Tally.desktop`, `.Devel.desktop` | ported, byte-identical but for `Icon=` |
+| `ca.vlacroix.Tally.metainfo.xml`, `.Devel.metainfo.xml` | `data/org.rubygtkproject.Tally.metainfo.xml`, `.Devel.metainfo.xml` | ported; id, bugtracker and launchable retargeted |
+| `COPYING` | `COPYING` | ported verbatim, listed in the gemspec |
+| `Makefile` xgettext / msgmerge rules | `rakelib/gettext.rake` (`rake pot`, `rake po`, `rake pot:check`) | ported |
+| `Makefile` msgfmt rule | — | does not apply: `Tally::Locale` reads `po/*.po` directly, so there is no `.mo` to build |
+| `ca.vlacroix.Tally.json`, `.Devel.json` | — | **not ported, closed as not applicable** (below) |
+| `tally.doap`, `tally.png`, `.github/workflows/ci.yml` | — | project furniture, not application components |
+
+**The Flatpak manifests are closed as not ported.** Both build Lua 5.4 and
+LuaGObject from source inside `org.gnome.Sdk` and then run upstream's
+`Makefile`; none of that describes a Ruby application, and a manifest for this
+port would have to build the ruby-gnome C extensions against the GNOME SDK —
+a different piece of work from porting Tally. The port is packaged as a gem
+and as the Nix flake in this repository instead. `Tally::Application`'s
+`DEVEL_SUFFIX` therefore no longer claims to match a manifest: it matches the
+`.Devel` desktop entry, metainfo file and icon, which are all shipped, and its
+class comment says exactly that.
 
 ## Totals
 
-26 components. 20 have a port file opposite them and are compared on all four
-axes in `component-parity.md`; 6 (the icons, the desktop entries, the AppStream
-metadata, the Flatpak manifests, the licence text and the catalogue build
-rules) have none.
+26 components. 24 have a port counterpart; 2 do not, and both are closed
+rather than outstanding:
+
+- the two Flatpak manifests, closed as not applicable (above);
+- upstream's `msgfmt` rule, closed as not applicable (the port has no `.mo`
+  step).

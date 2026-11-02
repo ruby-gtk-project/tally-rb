@@ -13,6 +13,8 @@ module Tally
   # Both spellings live here: ACCENTS is the six real colours, ALL prepends
   # SYSTEM, and `key`/`value` convert between the two.
   module Colors
+    include Gettext
+
     SYSTEM = "system"
     ACCENTS = %w[red orange yellow green blue purple].freeze
     ALL = [SYSTEM, *ACCENTS].freeze
@@ -20,13 +22,13 @@ module Tally
     # Translated labels, used as the check buttons' tooltips. Upstream's
     # getcolorname() answers "No color" for both nil and "system".
     NAMES = {
-      SYSTEM   => "No color",
-      "red"    => "Red",
-      "orange" => "Orange",
-      "yellow" => "Yellow",
-      "green"  => "Green",
-      "blue"   => "Blue",
-      "purple" => "Purple",
+      SYSTEM   => N_("No color"),
+      "red"    => N_("Red"),
+      "orange" => N_("Orange"),
+      "yellow" => N_("Yellow"),
+      "green"  => N_("Green"),
+      "blue"   => N_("Blue"),
+      "purple" => N_("Purple"),
     }.freeze
 
     class << self

@@ -1,0 +1,45 @@
+# The half of upstream's Makefile gettext rules that carries over, run on every
+# push. `rake pot` has to be deterministic for this to mean anything, which is
+# why rakelib/gettext.rake strips the two date headers rxgettext writes.
+#
+# This check is the answer to a defect the port inherited and could not see:
+# upstream's po/MESSAGES.pot is stale against upstream's own Lua, so seven of
+# the port's strings had no msgid in any catalogue and nothing would ever have
+# noticed. A failing `rake pot:check` is that noticing.
+name: Translations
+
+on:
+  push:
+    branches: [ruby]
+  pull_request:
+    branches: [ruby]
+  workflow_dispatch:
+
+jobs:
+  catalogues:
+    name: Catalogues are in step with the source
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # The devShell is where rxgettext, msgmerge and the app's runtime gems
+      # live; there is no other environment in which this repository builds.
+      - uses: DeterminateSystems/nix-installer-action@main
+      - uses: DeterminateSystems/magic-nix-cache-action@main
+
+      - name: po/MESSAGES.pot matches lib/ and exe/
+        run: nix develop --command rake pot:check
+
+      - name: Every catalogue still compiles
+        run: nix develop --command bash -c 'for po in po/*.po; do msgfmt --check --statistics -o /dev/null "$po"; done'
+
+      - name: The display-free specs pass
+        # --format progress replaces .rspec's formatter list: the HTML and
+        # JUnit formatters it asks for come from the full development bundle,
+        # which this shell does not carry, and a formatter rspec cannot load
+        # fails the run before any example is reached.
+        run: nix develop --command ruby -e 'require "rspec/core"; exit RSpec::Core::Runner.run(["--format", "progress", "--require", "spec_helper", "spec"])'
+
+      - name: The app builds, runs and is driven
+        run: nix develop --command xvfb-run ruby test/drive_tally.rb

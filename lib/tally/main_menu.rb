@@ -14,8 +14,8 @@ module Tally
     include Gettext
 
     ITEMS = {
-      "Keyboard Shortcuts" => "win.shortcuts",
-      "About Tally"        => "win.about",
+      N_("Keyboard Shortcuts") => "win.shortcuts",
+      N_("About Tally")        => "win.about",
     }.freeze
 
     def self.build = new.build

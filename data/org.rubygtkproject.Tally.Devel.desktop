@@ -1,0 +1,21 @@
+[Desktop Entry]
+Categories=Utility
+Name=Tally (development version)
+Name[en]=Tally (development version)
+Name[fr]=Compteur (version en développement)
+Name[id]=Penghitung (versi pengembangan)
+Comment=Count anything
+Comment[en]=Count anything
+Comment[fr]=Compter tout
+Comment[id]=Hitung apapun
+Comment[it]=Conta qualsiasi cosa
+Keywords=tally;counter;tally counter;
+Keywords[en]=tally;counter;tally counter;
+Keywords[fr]=tally;compteur;compteur manuel;
+Keywords[id]=tally;penghitung;hitung;
+Keywords[it]=tally;contatore;conteggio;contatore manuale;
+Type=Application
+Exec=tally
+Terminal=false
+Icon=org.rubygtkproject.Tally.Devel
+StartupNotify=false

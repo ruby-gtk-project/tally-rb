@@ -16,10 +16,13 @@ module Tally
   # rebuilding it. The class swap that goes with it is upstream's: "boxed-list"
   # when clamped, "separators" when edge to edge.
   #
-  # Scrolling is done against the vertical adjustment rather than
-  # Gtk::Viewport#scroll_to: the row's offset inside the scrolled window is the
-  # sum of the allocations between them, which needs no API newer than the rest
-  # of the port.
+  # Scrolling is upstream's: counter:scroll calls viewport:scroll_to(row), and
+  # so does #scroll_into_view here. The viewport is the ScrolledWindow's own
+  # child — assigning a non-scrollable child (the MultiLayoutView) makes
+  # GtkScrolledWindow wrap it in a GtkViewport, and gtk_scrolled_window_get_child
+  # hands that viewport back, which is where upstream's `self.scrolledwin:get_child()`
+  # gets its viewport from too. scroll_to animates and places the row the way
+  # the platform does, which hand-rolled adjustment arithmetic does not.
   class CounterList < Gtk::ScrolledWindow
     LIST_SLOT = "list"
     CLAMP_MAX = 600
@@ -124,18 +127,30 @@ module Tally
       end
     end
 
-    # Upstream's counter:scroll — bring an expanded or just-moved row fully
-    # into view, without moving if it already is.
+    # Upstream's counter:scroll — bring an expanded or just-moved row into
+    # view. `child` is the GtkViewport the ScrolledWindow wrapped the layout
+    # view in; it is nil only before #build has run, and a row that is not
+    # inside it yet cannot be scrolled to, so both cases are no-ops rather
+    # than errors.
     def scroll_into_view(row)
-      adjustment = vadjustment
-      top = offset_in_view(row)
-      bottom = top + row.allocation.height
-      if top < adjustment.value
-        adjustment.value = top
-      elsif bottom > adjustment.value + adjustment.page_size
-        adjustment.value = bottom - adjustment.page_size
+      tap do
+        viewport.then do |view|
+          if view && row
+            view.scroll_to(row, nil)
+          end
+        end
       end
-      self
+    end
+
+    # The viewport GtkScrolledWindow interposes between itself and a
+    # non-scrollable child. Upstream reaches for the same object, as
+    # `self.scrolledwin:get_child()`.
+    def viewport
+      child.then do |view|
+        if view.is_a?(Gtk::Viewport)
+          view
+        end
+      end
     end
 
     # Upstream's window:scrollbottom — used after a counter is created, with
@@ -169,16 +184,6 @@ module Tally
       def activate(row)
         if row.respond_to?(:toggle_check)
           row.toggle_check
-        end
-      end
-
-      # Sums the allocations from the row up to this scrolled window, which is
-      # the row's y position in scrolled coordinates.
-      def offset_in_view(widget)
-        if widget.nil? || widget == self
-          0
-        else
-          widget.allocation.y + offset_in_view(widget.parent)
         end
       end
   end

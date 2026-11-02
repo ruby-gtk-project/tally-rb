@@ -75,9 +75,22 @@ module Tally
         # use only msgid/msgstr pairs with continuation lines. The header entry
         # (an empty msgid) and untranslated entries are dropped, so a missing
         # translation falls back to the msgid exactly as gettext would.
+        #
+        # Entries flagged `#, fuzzy` are dropped too, and that is not a detail.
+        # A fuzzy entry is msgmerge's guess: when a msgid changes, msgmerge
+        # pairs it with the nearest old one and carries that translation over
+        # marked as unreviewed. The guesses are frequently wrong — merging
+        # upstream's stale catalogues against this port's strings paired
+        # "Support this app!" with the *Translate* link's French — and gettext
+        # itself never uses a fuzzy translation. Honouring the flag is what
+        # keeps a wrong translation from being shown as a right one.
+        #
+        # Obsolete entries (`#~ msgid`) are ignored by the same rule that
+        # ignores every other comment line: the msgid pattern is anchored, so
+        # `#~ msgid "x"` is a comment, not a msgid.
         def parse(text)
           {}.tap do |entries|
-            state = {msgid: nil, msgstr: nil, field: nil}
+            state = {msgid: nil, msgstr: nil, field: nil, fuzzy: false, pending_fuzzy: false}
             text.each_line do |line|
               consume(entries, state, line.strip)
             end
@@ -85,10 +98,15 @@ module Tally
           end
         end
 
+        # The flag comment precedes the msgid it applies to, so it is latched
+        # in :pending_fuzzy and only becomes :fuzzy once that msgid arrives —
+        # committing the previous entry in between would otherwise clear it.
         def consume(entries, state, line)
           case line
           when /\Amsgid\s+"(.*)"\z/
             commit(entries, state)
+            state[:fuzzy] = state[:pending_fuzzy]
+            state[:pending_fuzzy] = false
             state[:msgid] = unescape(Regexp.last_match(1))
             state[:msgstr] = nil
             state[:field] = :msgid
@@ -97,6 +115,9 @@ module Tally
             state[:field] = :msgstr
           when /\A"(.*)"\z/
             append(state, unescape(Regexp.last_match(1)))
+          when /\A#,/
+            state[:pending_fuzzy] ||= line.include?("fuzzy")
+            state[:field] = nil
           when /\A#/, ""
             state[:field] = nil
           end
@@ -117,10 +138,13 @@ module Tally
           state[:msgid] = nil
           state[:msgstr] = nil
           state[:field] = nil
+          state[:fuzzy] = false
         end
 
         def usable?(state)
-          !state[:msgid].to_s.empty? && !state[:msgstr].to_s.empty?
+          !state[:fuzzy] &&
+            !state[:msgid].to_s.empty? &&
+            !state[:msgstr].to_s.empty?
         end
 
         def unescape(fragment)
@@ -136,8 +160,28 @@ module Tally
     end
   end
 
-  # Gettext gives widget classes the same short `_` upstream's Lua files use.
+  # Gettext gives widget classes the same short `_` upstream's Lua files use,
+  # and the `N_` mark for the msgids that cannot be written inside a `_()`.
+  #
+  # `N_` is gettext's long-standing no-op: it returns its argument unchanged
+  # and exists purely so the extractor can see the string. Several classes here
+  # hold their user-visible strings in a frozen table and translate them at the
+  # point of use — ShortcutsDialog::SECTIONS, MainMenu::ITEMS,
+  # AboutDialog::LINKS, Colors::NAMES — which is the right shape for the code
+  # but means the literal is nowhere near a `_(`. Without the mark, `rake pot`
+  # extracts nothing for any of them and the strings silently become
+  # untranslatable. Including the module also extends the including class with
+  # `N_`, because those tables are built in the class body.
   module Gettext
+    # The no-op mark, available to the class body.
+    module Marks
+      def N_(msgid) = msgid
+    end
+
+    def self.included(base)
+      base.extend(Marks)
+    end
+
     private
 
       def _(msgid) = Locale.gettext(msgid)

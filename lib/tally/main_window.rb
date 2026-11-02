@@ -48,6 +48,11 @@ module Tally
       @devel = devel
       @rows = []
       self.title = _("Tally")
+      # Upstream's icon comes from the GResource the application's
+      # resource_base_path points at; here Icons has put data/icons on the
+      # theme search path, so naming the application id is enough. A devel run
+      # asks for the .Devel icon, which is shipped too.
+      self.icon_name = application.application_id
       set_default_size(store.width, store.height)
       set_size_request(MIN_WIDTH, MIN_HEIGHT)
       if devel
@@ -161,7 +166,10 @@ module Tally
       @new_counter_dialog ||= NewCounterDialog.new { |name, color| create(name, color) }.build
     end
 
-    def about_dialog = @about_dialog ||= AboutDialog.build
+    def about_dialog
+      @about_dialog ||= AboutDialog.build(application_id: @application.application_id)
+    end
+
     def shortcuts_dialog = @shortcuts_dialog ||= ShortcutsDialog.build
 
     # 400px, measured on the window: below it the list goes edge to edge.
@@ -172,8 +180,11 @@ module Tally
       end
     end
 
+    # Upstream calls Adw.BreakpointCondition.new_length("MAX_WIDTH", 400,
+    # "PX"); the Ruby bindings expose only `parse`, so the same condition is
+    # spelled in the string syntax libadwaita's own parser reads.
     def breakpoint_condition
-      Adwaita::BreakpointCondition.new_length(:max_width, BREAKPOINT_WIDTH, :px)
+      Adwaita::BreakpointCondition.parse("max-width: #{BREAKPOINT_WIDTH}px")
     end
 
     def shortcuts_action

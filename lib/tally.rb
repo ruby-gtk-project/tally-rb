@@ -1,12 +1,11 @@
 # frozen_string_literal: true
 
-require_relative "tally/rb/version"
-
-# Backends and models, which the widgets below are built on.
-require_relative "tally/locale"
-require_relative "tally/colors"
-require_relative "tally/counter"
-require_relative "tally/store"
+# Backends and models, which the widgets below are built on. tally/rb is the
+# display-free half of the library — the models, the catalogues, the config
+# backend, the AppStream reader and the version — and it is separate because
+# requiring gtk4 initialises GTK and fails outright without a display, which
+# the specs for that half should not have to care about.
+require_relative "tally/rb"
 require_relative "tally/icons"
 require_relative "tally/styles"
 

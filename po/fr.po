@@ -7,7 +7,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: 0.4.1\n"
-"Report-Msgid-Bugs-To: \n"
+"Report-Msgid-Bugs-To: https://github.com/ruby-gtk-project/tally-rb/issues\n"
 "POT-Creation-Date: 2025-06-21 14:51-0400\n"
 "PO-Revision-Date: 2025-06-18 12:22-0400\n"
 "Last-Translator: Victoria Lacroix <victoria@vlacroix.ca>\n"
@@ -19,181 +19,201 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 "X-Generator: Gtranslator 48.0\n"
 
-#: counter.lua:240 main.lua:318
-msgid "Name"
-msgstr "Nom"
-
-#: counter.lua:246
-msgid "Color"
-msgstr "Couleur"
-
-#: counter.lua:255
-msgid "Move to top"
-msgstr "Mettre au début"
-
-#: counter.lua:258
-msgid "Move counter to the top of the current list"
-msgstr "Mettre ce compteur au début de la liste présente"
-
-#: counter.lua:264
-msgid "Move to bottom"
-msgstr "Mettre à la fin"
-
-#: counter.lua:267
-msgid "Move counter to the bottom of the current list"
-msgstr "Mettre ce compteur à la fin de la liste présente"
-
-#: counter.lua:282
-msgid "Move up"
-msgstr "Mettre dessus"
-
-#: counter.lua:285
-msgid "Move counter to just above the previous row"
-msgstr "Mettre ce compteur juste au dessus le compteur précédent"
-
-#: counter.lua:292
-msgid "Move down"
-msgstr "Mettre dessous"
-
-#: counter.lua:295
-msgid "Move counter to just below the next row"
-msgstr "Mettre ce compteur juste dessous le compteur suivant"
-
-#: counter.lua:327
-msgid "Create a new window for this counter"
-msgstr "Créer une nouvelle fenêtre pour ce compteur"
-
-#: counter.lua:334
-msgid "Show in a separate window"
-msgstr "Ouvrir une fenêtre individuelle pour ce compteur"
-
-#: counter.lua:417 main.lua:140 main.lua:232 main.lua:486
-msgid "Tally"
-msgstr "Compteur"
-
-#: counter.lua:431
-msgid "Decrement by 1"
-msgstr "Baisser par 1"
-
-#: counter.lua:440
-msgid "Increment by 1"
-msgstr "Augmenter par 1"
-
-#: main.lua:37
-msgid "No color"
-msgstr "Aucun couleur"
-
-#: main.lua:39
-msgid "Red"
-msgstr "Rouge"
-
-#: main.lua:41
-msgid "Orange"
-msgstr "Orange"
-
-#: main.lua:43
-msgid "Yellow"
-msgstr "Jaune"
-
-#: main.lua:45
-msgid "Green"
-msgstr "Vert"
-
-#: main.lua:47
-msgid "Blue"
-msgstr "Bleu"
-
-#: main.lua:49
-msgid "Purple"
-msgstr "Violet"
-
-#: main.lua:146
-msgid "translator-credits"
-msgstr "Victoria Lacroix <victoria@vtrlx.ca>"
-
-#: main.lua:150
+#: ../lib/tally/about_dialog.rb:37
 msgid "Translate this app!"
 msgstr "Traduire cette application!"
 
-#: main.lua:151
-msgid "Send a tip!"
-msgstr "Envoyer un pourboire!"
+#: ../lib/tally/about_dialog.rb:38
+#, fuzzy
+msgid "Support this app!"
+msgstr "Traduire cette application!"
 
-#: main.lua:152
-msgid ""
-"<p>Various enhancements have been made to allow Tally to be used with a "
-"screen reader. Keyboard shortcuts for closing counter windows have been "
-"added.</p>\n"
+#: ../lib/tally/about_dialog.rb:47 ../lib/tally/counter_window.rb:100
+#: ../lib/tally/counter_window.rb:215 ../lib/tally/main_window.rb:50
+#: ../lib/tally/main_window.rb:110
+msgid "Tally"
+msgstr "Compteur"
+
+#: ../lib/tally/about_dialog.rb:52
+msgid "translator-credits"
+msgstr "Victoria Lacroix <victoria@vtrlx.ca>"
+
+#: ../lib/tally/colors.rb:25
+msgid "No color"
+msgstr "Aucun couleur"
+
+#: ../lib/tally/colors.rb:26
+msgid "Red"
+msgstr "Rouge"
+
+#: ../lib/tally/colors.rb:27
+msgid "Orange"
+msgstr "Orange"
+
+#: ../lib/tally/colors.rb:28
+msgid "Yellow"
+msgstr "Jaune"
+
+#: ../lib/tally/colors.rb:29
+msgid "Green"
+msgstr "Vert"
+
+#: ../lib/tally/colors.rb:30
+msgid "Blue"
+msgstr "Bleu"
+
+#: ../lib/tally/colors.rb:31
+msgid "Purple"
+msgstr "Violet"
+
+#: ../lib/tally/counter_menu.rb:58 ../lib/tally/new_counter_dialog.rb:79
+msgid "Name"
+msgstr "Nom"
+
+#: ../lib/tally/counter_menu.rb:66
+msgid "Color"
+msgstr "Couleur"
+
+#: ../lib/tally/counter_menu.rb:80
+msgid "Reorder in List"
 msgstr ""
-"<p>L'application a été améliorée sur plusieurs fronts, permettant "
-"l'utilisation d'un lecteur d'écran. Des raccourcis clavier ont étés ajoutés."
-"</p>\n"
 
-#: main.lua:157
-msgid "Main Window"
-msgstr "Fenêtre principale"
+#: ../lib/tally/counter_menu.rb:101
+msgid "Move counter to the top of the current list"
+msgstr "Mettre ce compteur au début de la liste présente"
 
-#: main.lua:160 main.lua:177
-msgid "Quit Application"
-msgstr "Quitter l'application"
+#: ../lib/tally/counter_menu.rb:108
+msgid "Move counter to just above the previous row"
+msgstr "Mettre ce compteur juste au dessus le compteur précédent"
 
-#: main.lua:165 main.lua:200
+#: ../lib/tally/counter_menu.rb:115
+msgid "Move counter to just below the next row"
+msgstr "Mettre ce compteur juste dessous le compteur suivant"
+
+#: ../lib/tally/counter_menu.rb:122
+msgid "Move counter to the bottom of the current list"
+msgstr "Mettre ce compteur à la fin de la liste présente"
+
+#: ../lib/tally/counter_menu.rb:128
+#, fuzzy
+msgid "Show in a Separate Window"
+msgstr "Ouvrir une fenêtre individuelle pour ce compteur"
+
+#: ../lib/tally/counter_menu.rb:136
+msgid "Create a new window for this counter"
+msgstr "Créer une nouvelle fenêtre pour ce compteur"
+
+#: ../lib/tally/counter_window.rb:121
+msgid "Decrement by 1"
+msgstr "Baisser par 1"
+
+#: ../lib/tally/counter_window.rb:127
+msgid "Increment by 1"
+msgstr "Augmenter par 1"
+
+#: ../lib/tally/empty_state.rb:20
+msgid "No Counters"
+msgstr ""
+
+#: ../lib/tally/empty_state.rb:33
+#, fuzzy
+msgid "Create Counter"
+msgstr "Créer un nouveau compteur"
+
+#: ../lib/tally/main_menu.rb:17 ../lib/tally/shortcuts_dialog.rb:46
+#: ../lib/tally/shortcuts_dialog.rb:69
 msgid "Keyboard Shortcuts"
 msgstr "Raccourcis clavier"
 
-#: main.lua:170 main.lua:201
+#: ../lib/tally/main_menu.rb:18 ../lib/tally/shortcuts_dialog.rb:47
 msgid "About Tally"
 msgstr "À propos Compteur"
 
-#: main.lua:174
-msgid "Counter Window"
-msgstr "Fenêtre individuel"
-
-#: main.lua:182
-msgid "Close Window"
-msgstr "Fermer la fenêtre"
-
-#: main.lua:209
+#: ../lib/tally/main_window.rb:117
 msgid "Create a new counter"
 msgstr "Créer un nouveau compteur"
 
-#: main.lua:213
+#: ../lib/tally/main_window.rb:125
 msgid "Delete selected counters"
 msgstr "Supprimer compteurs sélectionnés"
 
-#: main.lua:219
-msgid "Filter counters by name and/or color"
-msgstr "Filtrer les compteurs par nom et couleur"
-
-#: main.lua:224
-msgid "Menu"
-msgstr "Menu"
-
-#: main.lua:228 main.lua:384
+#: ../lib/tally/main_window.rb:134 ../lib/tally/main_window.rb:297
 msgid "Select counters to delete"
 msgstr "Sélectionner des compteurs pour supprimer"
 
-#: main.lua:241
-msgid "Filter by name…"
-msgstr "Filtrer par nom…"
+#: ../lib/tally/main_window.rb:141
+msgid "Filter counters by name and/or color"
+msgstr "Filtrer les compteurs par nom et couleur"
 
-#: main.lua:309
-msgid "Add to list"
-msgstr "Ajouter à la liste"
+#: ../lib/tally/main_window.rb:149
+msgid "Menu"
+msgstr "Menu"
 
-#: main.lua:311
-msgid "Add this counter to the list"
-msgstr "Ajouter ce compteur à la liste"
-
-#: main.lua:380
+#: ../lib/tally/main_window.rb:293
 msgid "Stop selecting without deleting anything"
 msgstr "Arrêter la sélection et ne rien supprimer"
 
-#: main.c:134
-#, c-format
-msgid ""
-"An unrecoverable error occurred when loading Tally, preventing the program "
-"from starting.\n"
+#: ../lib/tally/new_counter_dialog.rb:30
+msgid "New Counter"
 msgstr ""
-"Une érreur fatale est passée durant le chargement de Compteur, et "
-"l'application n'est pas capable de démarrer.\n"
+
+#: ../lib/tally/new_counter_dialog.rb:89
+msgid "Add this counter to the list"
+msgstr "Ajouter ce compteur à la liste"
+
+#: ../lib/tally/new_counter_dialog.rb:99
+#, fuzzy
+msgid "Add to List"
+msgstr "Ajouter à la liste"
+
+#: ../lib/tally/search_bar.rb:56
+msgid "Filter by name…"
+msgstr "Filtrer par nom…"
+
+#: ../lib/tally/shortcuts_dialog.rb:44
+msgid "Main Window"
+msgstr "Fenêtre principale"
+
+#: ../lib/tally/shortcuts_dialog.rb:45 ../lib/tally/shortcuts_dialog.rb:50
+msgid "Quit Application"
+msgstr "Quitter l'application"
+
+#: ../lib/tally/shortcuts_dialog.rb:49
+msgid "Counter Window"
+msgstr "Fenêtre individuel"
+
+#: ../lib/tally/shortcuts_dialog.rb:51
+msgid "Close Window"
+msgstr "Fermer la fenêtre"
+
+#~ msgid "Move to top"
+#~ msgstr "Mettre au début"
+
+#~ msgid "Move to bottom"
+#~ msgstr "Mettre à la fin"
+
+#~ msgid "Move up"
+#~ msgstr "Mettre dessus"
+
+#~ msgid "Move down"
+#~ msgstr "Mettre dessous"
+
+#~ msgid "Send a tip!"
+#~ msgstr "Envoyer un pourboire!"
+
+#~ msgid ""
+#~ "<p>Various enhancements have been made to allow Tally to be used with a "
+#~ "screen reader. Keyboard shortcuts for closing counter windows have been "
+#~ "added.</p>\n"
+#~ msgstr ""
+#~ "<p>L'application a été améliorée sur plusieurs fronts, permettant "
+#~ "l'utilisation d'un lecteur d'écran. Des raccourcis clavier ont étés "
+#~ "ajoutés.</p>\n"
+
+#, c-format
+#~ msgid ""
+#~ "An unrecoverable error occurred when loading Tally, preventing the "
+#~ "program from starting.\n"
+#~ msgstr ""
+#~ "Une érreur fatale est passée durant le chargement de Compteur, et "
+#~ "l'application n'est pas capable de démarrer.\n"

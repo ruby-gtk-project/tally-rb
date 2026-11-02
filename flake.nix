@@ -145,6 +145,21 @@
             # resolves against the copied tree.
             install -Dm755 exe/${launcher} $out/share/tally/exe/${launcher}
 
+            # Desktop entries and AppStream metainfo, so an installed copy
+            # shows up in a launcher with its own icon rather than as an
+            # unnamed window. The icon theme is data/icons/hicolor, which is
+            # already a hicolor tree, so it drops straight into share/icons.
+            for f in data/*.desktop; do
+              [ -f "$f" ] && install -Dm644 "$f" $out/share/applications/$(basename "$f")
+            done
+            for f in data/*.metainfo.xml; do
+              [ -f "$f" ] && install -Dm644 "$f" $out/share/metainfo/$(basename "$f")
+            done
+            if [ -d data/icons/hicolor ]; then
+              mkdir -p $out/share/icons
+              cp -r data/icons/hicolor $out/share/icons/
+            fi
+
             # Compile any GSettings schema the port ships.
             if [ -d data/schemas ]; then
               mkdir -p $out/share/glib-2.0/schemas
@@ -189,18 +204,40 @@
             pkgs.pkg-config
             pkgs.glib.dev
             pkgs.gettext
+            # rxgettext, the extractor `rake pot` drives. GNU xgettext claims
+            # to support Ruby but only shells out to this, so without it
+            # `xgettext --language=Ruby` fails with "rxgettext subprocess
+            # failed: No such file or directory".
+            pkgs.rubyPackages_3_4.gettext
+            # The spec runner. The gems the full development bundle needs are
+            # not in this shell — it carries the app's runtime closure — but
+            # the suite is plain RSpec, so this is enough to run it.
+            pkgs.rubyPackages_3_4.rspec
             pkgs.gsettings-desktop-schemas
             pkgs.adwaita-icon-theme
+            # `exe/tally` has to be runnable from the shell, and this machine
+            # may well have no display server at all, so the shell carries one
+            # it can start itself: `xvfb-run ruby exe/tally` both launches the
+            # app and is how test/drive_tally.rb is run.
+            pkgs.xvfb-run
           ] ++ gtkStack;
 
           # Icons, GSettings schemas and the GTK portal all resolve through
           # XDG_DATA_DIRS; without these the window opens with blank icons.
+          # RUBYLIB is what makes `ruby exe/tally` work from a checkout: the
+          # launcher's `require "tally"` otherwise only resolves against an
+          # installed gem.
           shellHook = ''
             export XDG_DATA_DIRS="${pkgs.gsettings-desktop-schemas}/share/gsettings-schemas/${pkgs.gsettings-desktop-schemas.name}:${pkgs.gtk4}/share/gsettings-schemas/${pkgs.gtk4.name}:${pkgs.adwaita-icon-theme}/share:$XDG_DATA_DIRS"
             export GI_TYPELIB_PATH="${typelibPath}''${GI_TYPELIB_PATH:+:$GI_TYPELIB_PATH}"
+            export RUBYLIB="$PWD/lib''${RUBYLIB:+:$RUBYLIB}"
             [ -d data/schemas ] && export GSETTINGS_SCHEMA_DIR="$PWD/data/schemas"
             unset BUNDLE_GEMFILE BUNDLE_FROZEN
             echo "tally devshell — ruby $(ruby -e 'print RUBY_VERSION')"
+            echo "run the app:   xvfb-run ruby exe/tally     (or plain \`ruby exe/tally\` on a desktop)"
+            echo "drive the app: xvfb-run ruby test/drive_tally.rb"
+            echo "run the specs: ruby -e 'require \"rspec/core\"; exit RSpec::Core::Runner.run([\"--format\", \"progress\", \"--require\", \"spec_helper\", \"spec\"])'"
+            echo "catalogues:    rake pot && rake po && rake pot:check"
           '';
         };
       });
