@@ -1,20 +1,17 @@
 [Desktop Entry]
 Categories=Utility;
-Name=Tally
-Name[en]=Tally
 Name[fr]=Compteur
 Name[id]=Penghitung
 Name[it]=Contatore
-Comment=Count anything
-Comment[en]=Count anything
+Name=Tally
 Comment[fr]=Compter tout
 Comment[id]=Hitung apapun
 Comment[it]=Conta qualsiasi cosa
-Keywords=tally;counter;tally counter;
-Keywords[en]=tally;counter;tally counter;
+Comment=Count anything
 Keywords[fr]=tally;compteur;compteur manuel;
 Keywords[id]=tally;penghitung;hitung;
 Keywords[it]=tally;contatore;conteggio;contatore manuale;
+Keywords=tally;counter;tally counter;
 Type=Application
 Exec=tally
 Terminal=false

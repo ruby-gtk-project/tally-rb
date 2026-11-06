@@ -1,0 +1,10 @@
+[Desktop Entry]
+Categories=Utility
+Name=Tally (development version)
+Comment=Count anything
+Keywords=tally;counter;tally counter;
+Type=Application
+Exec=tally
+Terminal=false
+Icon=org.rubygtkproject.Tally.Devel
+StartupNotify=false

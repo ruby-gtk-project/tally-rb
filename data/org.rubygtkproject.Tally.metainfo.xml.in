@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+	<id>org.rubygtkproject.Tally</id>
+
+	<name>Tally</name>
+	<summary>Count anything</summary>
+	<url type="bugtracker">https://github.com/ruby-gtk-project/tally-rb/issues</url>
+	<url type="contact">https://www.vtrlx.ca/about</url>
+	<url type="homepage">https://www.vtrlx.ca/apps/tally/</url>
+	<url type="donation">https://liberapay.com/vtrlx/</url>
+
+	<content_rating type="oars-1.1" />
+
+	<releases>
+		<release version="0.7.3" date="2025-12-18">
+			<description>
+				<p>In-app icons are now supplied by Tally, fixing a bug where icons would not be shown if not provided by the user's operating system.</p>
+			</description>
+		</release>
+		<release version="0.7.2" date="2025-11-07">
+			<description>
+				<p>An Italian translation has been added.</p>
+			</description>
+		</release>
+		<release version="0.7.1" date="2025-11-05">
+			<description>
+				<ul>
+<li>Standalone counter windows can now be dragged from anywhere within the window, instead of only the title bar.</li>
+<li>Standalone counter windows now display a suitable title in the GNOME overview.</li>
+				</ul>
+			</description>
+		</release>
+		<release version="0.7" date="2025-10-01">
+			<description>
+				<p>Tally's state is now saved whenever changes are made, instead of when the app is closed. This fixes an issue where changes to counters would be reverted when shutting down the computer without closing the app first.</p>
+				<p>This update also brings Tally to version 49 of the GNOME platform.</p>
+			</description>
+		</release>
+		<release version="0.6.3" date="2025-06-25">
+			<description>
+				<p>Fixed a bug preventing a counter from being renamed after dragging and dropping it to another place in the list.</p>
+			</description>
+		</release>
+		<release version="0.6.2" date="2025-06-23">
+			<description>
+				<p>An Indonesian translation has been added.</p>
+			</description>
+		</release>
+		<release version="0.6.1" date="2025-06-18">
+			<description>
+				<p>Various enhancements have been made to allow Tally to be used with a screen reader. Keyboard shortcuts for closing counter windows have been added.</p>
+			</description>
+		</release>
+		<release version="0.6" date="2025-06-10">
+			<description>
+<ul>
+<li>A French translation has been added.</li>
+<li>The application icon has been updated.</li>
+</ul>
+			</description>
+		</release>
+		<release version="0.5" date="2025-03-31">
+			<description>
+<ul>
+<li>Customization options for each counter can now be accessed by expanding the counter rather than using a popover menu.</li>
+<li>Buttons now have explanatory tooltip text and many have also been given labels.</li>
+<li>The application window will remember its previous size and maximized state when reopened.</li>
+</ul>
+			</description>
+		</release>
+		<release version="0.4.2" date="2025-02-18">
+			<description>
+				<p>Tally now displays properly on a wider range of mobile devices.</p>
+			</description>
+		</release>
+		<release version="0.4.1" date="2024-11-28">
+			<description>
+				<p>Fixed an issue that prevented Tally from shutting down after using a counter popout window.</p>
+			</description>
+		</release>
+		<release version="0.4" date="2024-11-26">
+			<description>
+				<p>Individual counters can now be shown in separate windows with enlarged text and buttons.</p>
+			</description>
+		</release>
+		<release version="0.3" date="2024-11-18">
+			<description>
+<p>
+Various tweaks have been made to improve the user experience:
+</p>
+<ul>
+<li>Can now name a counter and assign it a colour before adding it to the list.</li>
+<li>Long counter names are no longer cut off.</li>
+<li>The option to rename a counter has been moved to its overflow menu.</li>
+<li>Buttons for reordering counters have been given a different layout to make it less likely to misclick them.</li>
+<li>Counters are now scrolled into view after being reordered.</li>
+<li>In mass delete mode, there is now a larger gap between a counter's name and its value.</li>
+</ul>
+			</description>
+		</release>
+		<release version="0.2" date="2024-11-04">
+			<description>
+				<p>Adds brand colour to store page.</p>
+			</description>
+		</release>
+		<release version="0.1" date="2024-10-01">
+			<description>
+				<p>Initial release.</p>
+			</description>
+		</release>
+	</releases>
+
+	<branding>
+		<color type="primary" scheme_preference="light">#ffbe6f</color>
+		<color type="primary" scheme_preference="dark">#a51d2d</color>
+	</branding>
+
+	<categories>
+		<category>Utility</category>
+	</categories>
+
+	<keywords>
+		<keyword>GNOME</keyword>
+		<keyword>Gtk</keyword>
+		<keyword>Adwaita</keyword>
+		<keyword>counter</keyword>
+		<keyword>tally</keyword>
+		<keyword>tally counter</keyword>
+	</keywords>
+
+	<developer id="ca.vlacroix">
+		<name>Victoria Lacroix</name>
+	</developer>
+
+	<metadata_license>FSFAP</metadata_license>
+	<project_license>GPL-3.0-or-later</project_license>
+
+	<recommends>
+		<display_length compare="ge">600</display_length>
+	</recommends>
+	<requires>
+		<display_length compare="ge">360</display_length>
+	</requires>
+	<supports>
+		<control>pointing</control>
+		<control>keyboard</control>
+		<control>touch</control>
+	</supports>
+
+	<description>
+		<p>
+			Keep, categorize, and organize a list of tally counters.
+		</p>
+	</description>
+
+	<launchable type="desktop-id">org.rubygtkproject.Tally.desktop</launchable>
+	<screenshots>
+		<screenshot type="default">
+			<image>https://www.vtrlx.ca/images/tally-1.png</image>
+		</screenshot>
+		<screenshot>
+			<image>https://www.vtrlx.ca/images/tally-4.png</image>
+		</screenshot>
+		<screenshot>
+			<image>https://www.vtrlx.ca/images/tally-2.png</image>
+		</screenshot>
+		<screenshot>
+			<image>https://www.vtrlx.ca/images/tally-3.png</image>
+		</screenshot>
+	</screenshots>
+</component>

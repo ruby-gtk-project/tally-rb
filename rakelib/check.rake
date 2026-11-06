@@ -30,7 +30,7 @@ unless Rake::Task.task_defined?("spec")
 end
 
 desc "Run the specs, the catalogue lint and the extraction check"
-task check: [:spec, "po:lint", "pot:check"] do
+task check: [:spec, "po:lint", "pot:check", "data:check"] do
   puts
   puts "check passed. The widget half needs a display and is not in this target:"
   puts "  nix develop --command xvfb-run -a ruby test/drive_tally.rb"

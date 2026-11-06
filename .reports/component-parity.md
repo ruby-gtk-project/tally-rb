@@ -147,6 +147,13 @@ close the row.
 **Owed:** build upstream's Flatpak, run both apps at the same size and compare
 the 15 states the driver already shoots.
 
+**2026-11-06:** not attempted this round. `flatpak-builder` here would need
+network access to fetch and compile `lua-5.4.7.tar.gz` and clone+build
+`LuaGObject` from source inside `org.gnome.Sdk` — a multi-GB download and a
+from-source C/Lua build, not something to start inside a task already
+budgeted for the gettext/data-file work above. Still the single largest open
+item in this ledger.
+
 ---
 
 ## Units at parity — the full ledger

@@ -30,7 +30,8 @@ msgstr "Traduire cette application!"
 
 #: ../lib/tally/about_dialog.rb:47 ../lib/tally/counter_window.rb:102
 #: ../lib/tally/counter_window.rb:217 ../lib/tally/main_window.rb:50
-#: ../lib/tally/main_window.rb:111
+#: ../lib/tally/main_window.rb:111 data/org.rubygtkproject.Tally.desktop.in:3
+#: data/org.rubygtkproject.Tally.metainfo.xml.in:5
 msgid "Tally"
 msgstr "Compteur"
 
@@ -193,6 +194,37 @@ msgstr "Fenêtre individuel"
 #: ../lib/tally/shortcuts_dialog.rb:51
 msgid "Close Window"
 msgstr "Fermer la fenêtre"
+
+#: data/org.rubygtkproject.Tally.Devel.desktop.in:3
+msgid "Tally (development version)"
+msgstr "Compteur (version en développement)"
+
+#: data/org.rubygtkproject.Tally.Devel.desktop.in:4
+#: data/org.rubygtkproject.Tally.desktop.in:4
+#: data/org.rubygtkproject.Tally.metainfo.xml.in:6
+msgid "Count anything"
+msgstr "Compter tout"
+
+#: data/org.rubygtkproject.Tally.Devel.desktop.in:5
+#: data/org.rubygtkproject.Tally.desktop.in:5
+msgid "tally;counter;tally counter;"
+msgstr "tally;compteur;compteur manuel;"
+
+#: data/org.rubygtkproject.Tally.Devel.metainfo.xml.in:5
+msgid "Tally Nightly"
+msgstr ""
+
+#: data/org.rubygtkproject.Tally.Devel.metainfo.xml.in:6
+msgid "Count anything (development version)"
+msgstr ""
+
+#: data/org.rubygtkproject.Tally.Devel.metainfo.xml.in:35
+msgid "Keep and organize a list of tally counters."
+msgstr ""
+
+#: data/org.rubygtkproject.Tally.metainfo.xml.in:151
+msgid "Keep, categorize, and organize a list of tally counters."
+msgstr ""
 
 #~ msgid "Move to top"
 #~ msgstr "Mettre au début"

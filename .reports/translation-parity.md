@@ -441,6 +441,51 @@ owner.
   `.github/workflows/translations.yml` exists but was not exercised by this
   audit.
 
+## Round 2 addendum — 2026-11-06
+
+**The "23 metadata msgids" row above is now closed, and closed in a way that
+goes beyond parity, not just to match it.** `data/*.desktop` and
+`data/*.metainfo.xml` are generated files now: `data/*.desktop.in` and
+`data/*.metainfo.xml.in` are the new committed templates, `rake pot` extracts
+from them (`xgettext -L Desktop`, `xgettext --its=metainfo.its`) joined onto
+the same `po/MESSAGES.pot` the Ruby sources feed, and the new `rake data` /
+`rake data:check` pair (wired into `rake check`) builds and verifies the real
+files with `msgfmt --desktop` / `msgfmt --xml`. See
+`/home/nathan/src/github/ruby-gtk-project/tally-rb/rakelib/gettext.rake`.
+
+Every existing hand-duplicated translation (`Name[fr]=Compteur`, etc.) was
+seeded into `po/fr.po`, `po/id.po` and `po/it.po` as real msgid/msgstr pairs
+before the switch, verified byte-for-byte unchanged in the regenerated
+`data/*.desktop` files (`spec/tally/metainfo_spec.rb` already pins this).
+`data/*.metainfo.xml`, which had **zero** translations on either side before
+this round, now gets `<name xml:lang="…">`/`<summary xml:lang="…">` for fr,
+id and it for free, because its `<name>`/`<summary>` share the identical
+English strings the desktop entries already had translated. That is new
+behavior the port has and upstream does not — noted here as exactly that, not
+folded silently into "parity holds."
+
+Still open, and not attempted this round:
+
+- **Open item 2** (the stale upstream POT / 7 English-everywhere msgids) and
+  the three "port fixes an upstream bug" claims in
+  `.reports/accountability-ensurance.md` all call for filing an issue against
+  upstream. Upstream's own `README.md` (`git show origin/trunk:README.md`)
+  says development moved to Codeberg (`codeberg.org/vtrlx/tally`) and asks
+  for issues there, but also still names `github.com/vtrlx/tally` further
+  down; checking, `github.com/vtrlx/tally` is **archived** (`gh repo view
+  vtrlx/tally --json isArchived` → `true`), which disables new issues there,
+  and this session has no Codeberg credentials (Gitea API/tea CLI) to file on
+  the Codeberg mirror — fetching or probing for any would be credential
+  exploration, which this session's permissions correctly refuse. Filing
+  those issues stays a named gap, not a silent drop; see
+  `.reports/accountability-ensurance.md`'s matching addendum.
+- Building upstream's Flatpak manifest, or running its Lua/LuaGObject stack
+  headlessly, to compare both apps on screen side by side (component-parity.md
+  Gap 3) was not attempted this round — it needs network access for
+  `flatpak-builder` to fetch and compile Lua 5.4 and LuaGObject inside
+  `org.gnome.Sdk`, which is a multi-GB, long-running build out of scope for
+  this pass. Still open.
+
 ## Report line
 
 ```

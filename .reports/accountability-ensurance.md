@@ -315,6 +315,22 @@ upstream bugs with user-visible consequences — the spin-button rehook, the
 `key_capture_widget` typo and the pop-out `devel` guard — are **reported
 upstream**. They have not been.
 
+### 2026-11-06 — tried, and blocked by where upstream actually lives
+
+Attempted this round. Upstream's current `README.md` (`git show
+origin/trunk:README.md`) opens with "MOVED TO CODEBERG" and names
+`codeberg.org/vtrlx/tally` as where issues should go, but its own body text
+further down still says "Issues... on GitHub" at `github.com/vtrlx/tally` —
+the two instructions disagree, which itself is evidence of a project in
+mid-move. The GitHub address is real but `gh repo view vtrlx/tally
+--json isArchived` returns `true`: GitHub disables new issues on an archived
+repository, so U1, U2 and U3 cannot be filed there. Codeberg is a separate,
+Gitea-based host this session has no credentials for (no `tea` CLI, no
+Codeberg token), and probing for either would be credential exploration this
+session's permissions correctly decline to do on their own initiative. Filing
+U1–U3, and the stale-POT issue below, needs a person with Codeberg
+credentials to either file them directly or hand this session a token.
+
 ## Also owed, and nowhere else recorded
 
 Two debts the parity ledgers name and no file in the port owns:
