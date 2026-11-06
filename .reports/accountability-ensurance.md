@@ -16,6 +16,21 @@
 > are this audit's; the session that closed the findings ran **289 of 289
 > checks passed, DRIVE OK** across 77 steps and **83 examples, 0 failures**.
 
+> **Reverified 2026-11-06 @ `0be085f`.** This session independently re-ran
+> `grep -rniE 'TODO|FIXME|not implemented|for now|in a future' lib exe
+> .reports PORTING.md`: the only hit is the same one Finding 15 already
+> accounts for —
+> `lib/tally/application.rb:101`, which *quotes* upstream's own FIXME and
+> names the file-and-line it comes from rather than deferring work of its own.
+> No new `TODO`/`FIXME`/"not implemented" has been introduced, and no report
+> in `.reports/` or `PORTING.md` currently claims a run that was not actually
+> performed in the session that wrote it — this session's own driver and
+> `rake check` runs are logged above and in `test-parity.md`, not assumed.
+> Findings 4 and 5 remain closed (historical); Finding 6 — three of the six
+> upstream-bug claims are genuine, user-visible bugs that have still not been
+> filed against `origin/trunk` — remains open, unchanged, because filing an
+> upstream issue is outside what this session can do from this clone.
+
 |  |  |
 |---|---|
 | Upstream | `origin/trunk` @ `e9986b010c950d2df91b682769b744c412348e0c` |

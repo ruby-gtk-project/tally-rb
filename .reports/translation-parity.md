@@ -12,6 +12,13 @@
 > 23 metadata msgids reaching no catalogue in either project, with no `data/`
 > extraction on the port's side) are untouched and still open.
 
+> **Reverified 2026-11-06 @ `0be085f`.** `po/{fr,id,it}.po` and
+> `po/MESSAGES.pot` are unchanged since this ledger was written (no diff under
+> `po/` since `c95adfa`), and `rake check`'s `po:lint` + `pot:check` passed
+> again in this session (see `.reports/test-parity.md`). The 41/41 code-msgid
+> and 23/23 metadata-msgid parity verdict still holds; items 2 and 3 are still
+> open and still not filed as upstream issues.
+
 |  |  |
 |---|---|
 | Upstream | `origin/trunk` @ `e9986b010c950d2df91b682769b744c412348e0c` |

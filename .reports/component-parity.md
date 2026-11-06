@@ -11,6 +11,16 @@
 > OK**, 77 steps. Gap 3, nothing having been compared against upstream
 > running, is untouched and is the one open component gap.
 
+> **Reverified 2026-11-06 @ `0be085f`.** Re-ran the driver in this session:
+> `nix develop --command xvfb-run -a ruby test/drive_tally.rb` → **289 of 289
+> checks passed, DRIVE OK** (77 steps), matching the figure above exactly, not
+> transcribed from it. No file under `lib/`, `exe/`, `data/` or `spec/` has
+> changed since this ledger or the superseding note were written, so the
+> 19/22-plus-fixes verdict and the counts in every per-unit table below still
+> describe the tree at HEAD. Gap 3 remains open and unchanged: upstream is
+> still a Flatpak-only Lua app that has not been built in this environment, so
+> no claim here rests on watching the original run.
+
 |  |  |
 |---|---|
 | Upstream | `origin/trunk` @ `e9986b010c950d2df91b682769b744c412348e0c` |

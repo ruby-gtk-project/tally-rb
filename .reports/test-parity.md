@@ -11,6 +11,18 @@
 > inherits no safety net — every property pinned was chosen by the port's own
 > author.
 
+> **Reverified 2026-11-06 @ `0be085f`.** Both suites re-run in this session,
+> not copied from a prior log: `nix develop --command xvfb-run -a ruby
+> test/drive_tally.rb` → **289 of 289 checks passed, DRIVE OK** (77 steps, 15
+> shots), and `nix develop --command rake check` → **83 examples, 0
+> failures**, `po/{fr,id,it}.po` all valid under `msgfmt --check
+> --check-format`, `po/MESSAGES.pot` up to date. No file under `spec/`,
+> `test/`, `lib/` or `exe/` has changed since the 289/83 figures above were
+> first recorded, so this is the same suite confirmed to still pass, not a new
+> one. The upstream-has-no-tests finding (parity 0/0) is unchanged — census of
+> `origin/trunk` still shows no `test/` directory, no test target in its
+> `Makefile`, no test job in its CI.
+
 |  |  |
 |---|---|
 | Upstream | `origin/trunk` @ `e9986b010c950d2df91b682769b744c412348e0c` |

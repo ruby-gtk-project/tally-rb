@@ -1,5 +1,13 @@
 # Component identification — tally / tally-rb
 
+> **Reverified 2026-11-06 @ `0be085f`.** Nothing under `lib/`, `exe/`, `data/`
+> or `po/` has changed since this census was written (the only intervening
+> commits — `898e703`, `0be085f` — touch gem packaging metadata and
+> `component-inventory.md` only; `git diff --stat c95adfa HEAD -- lib exe spec
+> test po data` is empty). The 22-port-class / 2-upstream-file census below
+> still matches the tree. No new upstream commit either: `origin/trunk` is
+> still `e9986b010c950d2df91b682769b744c412348e0c`.
+
 |  |  |
 |---|---|
 | Upstream | `origin/trunk` @ `e9986b010c950d2df91b682769b744c412348e0c` |
