@@ -1,5 +1,35 @@
 # Accountability ensurance — tally-rb
 
+> **Reverified 2026-11-07 @ `a20f8e0`, independent adversarial audit —
+> Finding 7 reappeared and was fixed properly this round; this audit did not
+> write that fix and re-ran it cold.** The session that closed Finding 7 at
+> `9329558` had it reappear on its own next round (`a20f8e0`): an isolated,
+> freshly launched run failed the same seven checks again, because a fixed
+> `pump(200)` after `dialog.create_button.activate` was still guessing at how
+> long `Adw.Dialog`'s frame-clock-driven close takes rather than waiting for
+> it. The fix replaces the guess with `pump_until(timeout_ms) { condition }`,
+> which polls `visible_dialog.nil?` instead of sleeping a fixed margin. This
+> audit ran the *current* code three more times, independently, cold (no
+> warm cache, no concurrent sibling load carried over from the fix session) —
+> **3 of 3 clean, 289/289, DRIVE OK**, plus `rake check` clean (83 examples,
+> 0 failures, catalogues up to date). Combined with the fix commit's own 5
+> runs, that is 8 consecutive clean runs on the polling fix. The honest
+> framing stands: a condition-based wait removes the *mechanism* that made a
+> fixed margin racy, which is a stronger claim than "N runs passed," but N
+> runs passed is still the only evidence in hand — nobody has proven the poll
+> itself cannot time out under worse contention than has been tried. The
+> lexical scan was re-run independently this round: same three hits as last
+> round (`lib/tally/application.rb:101`, `rakelib/gettext.rake:306`,
+> `spec/tally/locale_spec.rb:100`), none an excuse, no new hit. Finding 6
+> (three genuine upstream bugs, user-visible, none filed — still blocked on
+> Codeberg credentials this session does not have) and the two "also owed"
+> items (the stale upstream POT not filed, nothing compared against upstream
+> running) remain open, unchanged, for the reasons their own reports give.
+> **No new accountability finding this round** — the one gap worth naming is
+> that a report calling a fix "closed" after 8 runs was wrong once already in
+> this file's own history, which argues for treating any fixed-N-runs count,
+> including this round's, as provisional rather than closed.
+
 > **Reverified 2026-11-07 @ `9329558`, independent adversarial audit —
 > Finding 7 is closed, verified by a session that did not write the fix.**
 > The committing session's own commit message for `9329558` claims "5 runs

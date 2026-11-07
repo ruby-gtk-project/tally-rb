@@ -1,5 +1,18 @@
 # Component parity — tally / tally-rb
 
+> **Reverified 2026-11-07 @ `a20f8e0`, independent adversarial audit — no
+> change to the port's components.** `git diff 9329558 a20f8e0 -- lib exe
+> data po` is empty; the only commits since the last audit (`9329558`,
+> `1e832ba`, `a20f8e0`) touch `test/drive_tally.rb`'s wait strategy and
+> `.reports/` prose, re-fixing Finding 7 (see `.reports/accountability-
+> ensurance.md`) — no widget, signal, action or CSS class moved on either
+> side. Units remain **19/22 at parity**; Gap 1 and 2 remain closed (verified
+> again this round: `ColorSelector` still takes `valign:` per call site,
+> `CounterDragRow#spin_button` still sets none). Gap 3 (nothing compared
+> against upstream running) remains open, unattempted, for the same reason
+> as every prior round — this is now the fifth consecutive round it has been
+> re-stated rather than closed or budgeted for.
+
 > **Reverified 2026-11-07 @ `9329558`, independent adversarial audit — no
 > change.** `git diff 88e6110 9329558 -- lib exe data po` is empty; the only
 > commit since the last audit touches the test driver's timing and

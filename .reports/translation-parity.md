@@ -1,5 +1,13 @@
 # Translation parity — tally / tally-rb
 
+> **Reverified 2026-11-07 @ `a20f8e0`, independent adversarial audit — no
+> change.** `git diff 9329558 a20f8e0 -- po data` is empty; the intervening
+> commits touch only `test/drive_tally.rb` and `.reports/` prose (Finding 7's
+> second fix). Re-checked by hand: `grep -c '^msgid "' po/MESSAGES.pot` → 49
+> rows, unchanged; `po/{fr,id,it}.po` present, 3/3 languages; `rake pot:check`
+> re-run clean this round as part of `rake check`. Verdict unchanged: parity
+> holds on the msgid axis, and Open items 1–3 below remain open, unchanged.
+
 > **Reverified 2026-11-07 @ `9329558`, independent adversarial audit — no
 > change.** `git diff 88e6110 9329558 -- po data` is empty. Re-checked by
 > hand: `grep -c '^msgid "' po/MESSAGES.pot` → 49 rows (48 messages plus the

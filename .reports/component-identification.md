@@ -1,5 +1,17 @@
 # Component identification — tally / tally-rb
 
+> **Reverified 2026-11-07 @ `a20f8e0`, independent adversarial audit.** The
+> only changes since `9329558` are `1e832ba` and `a20f8e0`, which touch
+> `test/drive_tally.rb`'s wait strategy and `.reports/` prose — Finding 7's
+> dialog-close race reappeared and was fixed properly this round (see
+> `.reports/accountability-ensurance.md` and `.reports/test-parity.md`).
+> `git diff 9329558 a20f8e0 -- lib exe data po` is empty. Re-ran the census
+> commands by hand: `find lib -name '*.rb' | wc -l` → 25 files (22 port
+> classes + `lib/tally.rb`, `lib/tally/rb.rb`, `lib/tally/rb/version.rb`,
+> none of which maps to an upstream unit), unchanged; `origin/trunk` is still
+> `e9986b010c950d2df91b682769b744c412348e0c`. No new widget, signal, action
+> or CSS class on either side.
+
 > **Reverified 2026-11-07 @ `9329558`, independent adversarial audit.** The
 > only change since the last reverification is `9329558`, which touches
 > `test/drive_tally.rb` (a `pump(200)` call, no widget/signal/CSS change) and
