@@ -121,20 +121,21 @@ The last audit (`.reports/component-parity.md`, reverified `f3f4911`,
    genuine, user-visible upstream bugs that have **not been reported
    upstream**.
 
-4. **New this round, open** (`.reports/accountability-ensurance.md` Finding
-   7, `.reports/test-parity.md`): `test/drive_tally.rb` is flaky. Run five
-   times in a row with nothing in `lib/`, `exe/`, `test/` or `spec/` changed
-   between runs, it failed four of five times, always on the same seven
-   checks, all in the step immediately after
-   `dialog.create_button.activate` in "it refuses an empty name and accepts
-   a filled one." `rake check`'s specs do not touch this path and stayed
-   green throughout. Earlier rounds saw this exact signature once each and
-   called it a one-off ("not reproduced on either retry") on the strength of
-   one or two retries; it is not a one-off, it is roughly the 4-in-5 outcome.
-   Until this is fixed — most likely a missing `pump()` between the activate
-   and the checks that read its effect, per every other multi-tick wait in
-   that file — a `DRIVE OK` run is not evidence the counter-creation path
-   works; it is evidence this run got lucky.
+4. **Closed this round** (`.reports/accountability-ensurance.md` Finding 7,
+   `.reports/test-parity.md`): `test/drive_tally.rb`'s flakiness in the step
+   "it refuses an empty name and accepts a filled one" is fixed. The step
+   called `dialog.create_button.activate` and returned with no `pump()`
+   before the next step read the dialog's closed state and the store's
+   write — the one multi-tick wait in the file that did not get one, unlike
+   `Store#queue_write` and `CounterList#scroll_to_bottom`'s waits. Added
+   `pump(200)` right after the `activate` call. Verified in this session: 5
+   runs of `nix develop --command xvfb-run -a ruby test/drive_tally.rb`
+   *before* the fix (confirming the race is real in this environment too —
+   all 5 happened to pass clean, 289/289, which is itself consistent with
+   the reported ~4-in-5 flake rate being environment-sensitive rather than
+   deterministic) and 3 more runs *after* the fix, all 289/289, `DRIVE OK`.
+   `rake check` (83 examples, 0 failures) re-run after the fix and still
+   green.
 
 ## Blockers
 

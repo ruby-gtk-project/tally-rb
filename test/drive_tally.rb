@@ -137,6 +137,16 @@ GtkDriver.drive(Tally::Application.new, shots: SHOTS) do |d, app|
       dialog.name_entry.text = "Coffee"
       d.check("create is sensitive once named") { dialog.create_button.sensitive? }
       dialog.create_button.activate
+      # Adw.Dialog's close is not guaranteed synchronous with the handler that
+      # calls it — the next step reads the dialog's closed state and the
+      # store's write straight off of this, so it needs the same main-loop
+      # turn-back every other multi-tick wait in this file gets (see #pump
+      # above `Store#queue_write` and `CounterList#scroll_to_bottom`).
+      # Without it this step is a race: PORTING.md and
+      # .reports/test-parity.md both record it failing 4 of 5 independent
+      # runs with no code change, always on the checks right after this
+      # line.
+      pump(200)
     end
   end
 
