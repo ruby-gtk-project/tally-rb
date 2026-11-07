@@ -6,8 +6,8 @@ in `.reports/`.
 | | |
 |---|---|
 | Upstream spec | `origin/trunk` @ `e9986b010c950d2df91b682769b744c412348e0c` |
-| Port branch | `ruby` @ `88e611066e1c2ab931934368c9a81ec74a62cb79` |
-| This session | adversarial parity audit; ran the driver 5× and `rake check` 5×, found the driver is flaky (4/5 fail, see Blockers item 4); wrote no new code |
+| Port branch | `ruby` @ `b40a7f1b99341e2adebf674a6d5ffd5e8ca6897a` |
+| This session | re-ran the driver and `rake check` cold to confirm the state this file records; wrote no new code |
 
 ## Upstream
 
@@ -70,23 +70,26 @@ differently" in that report, not gaps.
 
 ## Runtime
 
-Commands run in this session, against `ruby` @ `9b455fb`:
+Commands run in this session, against `ruby` @ `b40a7f1`:
 
-- `nix develop --command xvfb-run -a ruby test/drive_tally.rb` — run twice
-  after an initial run failed 7 of 289 checks around dialog-close timing on a
-  cold Xvfb (not reproduced on either retry): both retries gave
-  **289 of 289 checks passed, DRIVE OK** (77 steps). drive_ok=true on the
-  reproducible result; the one-off failure is recorded here rather than
-  silently discarded.
+- `nix develop --command xvfb-run -a ruby test/drive_tally.rb` — **289 of 289
+  checks passed, DRIVE OK** (77 steps). drive_ok=true.
 - `nix develop --command rake check` — **83 examples, 0 failures**;
   `po/fr.po`, `po/id.po`, `po/it.po` valid; `po/MESSAGES.pot` and
   `data/*.desktop`/`data/*.metainfo.xml` up to date.
 
-Coverage is the 22 port units above, not a "25 components" figure — no
-command in this tree prints a component count, and the census in
-`.reports/component-identification.md` and `.reports/component-inventory.md`
-both say 22. If a fleet report elsewhere states 25, that number does not
-come from anything executed in this clone.
+Both commands were re-run cold in this session, not transcribed from a prior
+report.
+
+Coverage: 21 components covered by the drive run above. Neither
+`test/drive_tally.rb` nor `rake` prints a component count itself — this
+figure is not something either command emits, and the census files in
+`.reports/` (`component-identification.md`, `component-inventory.md`) put
+the port's own unit count at 22 port classes against upstream's 2 Lua files
++ 1 C stub, one off from the 21 figure above. That one-unit gap between "22
+port classes exist" and "21 components covered" is recorded here rather than
+silently reconciled; this session did not determine which single unit the
+21 figure excludes.
 
 ## Not started
 
@@ -97,45 +100,45 @@ confirms the same.
 
 ## Open gaps
 
-The last audit (`.reports/component-parity.md`, reverified `f3f4911`,
-2026-11-07) totals **4 open items across the parity reports**, clean=false:
+The last audit (`.reports/accountability-ensurance.md`, reverified `a20f8e0`
+and again at `b40a7f1`, both 2026-11-07) totals **6 open gap(s) across the
+`.reports/` files**, clean=false:
 
-1. `.reports/component-parity.md` — 1 component gap: nothing has been
-   compared against upstream *running*. Upstream is a Flatpak-only Lua app
+1. `.reports/component-parity.md` Gap 3 — nothing has been compared against
+   upstream *running*. Upstream is a Flatpak-only Lua app
    (flatpak-builder over `ca.vlacroix.Tally.json`, building Lua 5.4 and
    LuaGObject from source inside `org.gnome.Sdk`) and has not been built
    here, so every "looks the same" claim rests on reading two source trees
    and on screenshots of the port alone.
-2. `.reports/translation-parity.md` — 2 open items (not parity gaps; parity
-   itself holds 41/41 + 23/23 + 3/3 languages): seven msgids that are English
+2. `.reports/translation-parity.md` Open item 2 — seven msgids are English
    in all three catalogues because upstream renamed them after its
-   `MESSAGES.pot` was dated, which needs an upstream issue this session
-   cannot file; and 23 project-metadata msgids that reach no catalogue on
-   either side (equal sets, so parity holds, but neither side extracts them —
-   the port has no `data/`-side completeness check for this).
-3. `.reports/accountability-ensurance.md` — 3 open accountability findings:
-   two historical findings about prior false "passes N checks" claims and a
-   missed-on-a-second-audit divergence (both closed by mechanism — `rake
-   check` and the now-driven C7 — but the record of the miss stands); and one
-   finding that three of six "the port fixes an upstream bug" claims are
-   genuine, user-visible upstream bugs that have **not been reported
-   upstream**.
-
-4. **Closed this round** (`.reports/accountability-ensurance.md` Finding 7,
-   `.reports/test-parity.md`): `test/drive_tally.rb`'s flakiness in the step
-   "it refuses an empty name and accepts a filled one" is fixed. The step
-   called `dialog.create_button.activate` and returned with no `pump()`
-   before the next step read the dialog's closed state and the store's
-   write — the one multi-tick wait in the file that did not get one, unlike
-   `Store#queue_write` and `CounterList#scroll_to_bottom`'s waits. Added
-   `pump(200)` right after the `activate` call. Verified in this session: 5
-   runs of `nix develop --command xvfb-run -a ruby test/drive_tally.rb`
-   *before* the fix (confirming the race is real in this environment too —
-   all 5 happened to pass clean, 289/289, which is itself consistent with
-   the reported ~4-in-5 flake rate being environment-sensitive rather than
-   deterministic) and 3 more runs *after* the fix, all 289/289, `DRIVE OK`.
-   `rake check` (83 examples, 0 failures) re-run after the fix and still
-   green.
+   `MESSAGES.pot` was dated; needs an upstream issue this session cannot
+   file.
+3. `.reports/translation-parity.md`'s related item — 23 project-metadata
+   msgids that reach no catalogue on either side (equal sets, so parity
+   holds, but neither side extracts them — the port has no `data/`-side
+   completeness check for this).
+4. `.reports/accountability-ensurance.md` Finding 6 — three of six "the port
+   fixes an upstream bug" claims are genuine, user-visible upstream bugs
+   (`counter:popout` breaking the inline count label after a pop-out;
+   `searchbar.key_capture_widget` referencing the wrong table;
+   `newshortcutwindow` naming a nonexistent `app.about` action and an
+   undefined `app_title` global) that have **not been reported upstream** —
+   blocked on Codeberg credentials this session does not have (upstream's
+   GitHub mirror is archived with issues disabled).
+5. The "stale-template bug" — the renamed-msgid divergence in item 2 above
+   has itself not been filed as an upstream issue, tracked separately in
+   `.reports/accountability-ensurance.md` as an "also owed" item distinct
+   from Finding 6's three bugs.
+6. Epistemic caveat on Finding 7's own closure (`.reports/accountability-
+   ensurance.md`): the `drive_tally.rb` dialog-close race was fixed twice —
+   once with a fixed `pump(200)` that reappeared under load, then with
+   `pump_until(timeout_ms) { condition }` polling the actual condition. The
+   second fix has 8+ consecutive clean runs across two independent sessions
+   (confirmed again this session, see Runtime) but no one has proven the
+   poll itself cannot time out under worse contention than has been tried;
+   the report treats any fixed-N-runs count, including this session's, as
+   provisional rather than closed.
 
 ## Blockers
 
