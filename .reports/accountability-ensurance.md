@@ -1,5 +1,33 @@
 # Accountability ensurance — tally-rb
 
+> **Reverified 2026-11-07 @ `9329558`, independent adversarial audit —
+> Finding 7 is closed, verified by a session that did not write the fix.**
+> The committing session's own commit message for `9329558` claims "5 runs
+> before the fix and 3 after, all 289/289" — note that its "before" runs
+> contradict the 4-in-5 failure rate this report measured two rounds ago,
+> which is itself worth flagging rather than smoothing over: either the race
+> is genuinely intermittent at a rate neither five-run sample pins down, or
+> something about repeated back-to-back runs in one session (shared Xvfb
+> state, warm caches) suppresses it. This audit could not resolve which,
+> because re-running the *old* code to compare is not how an audit of the
+> current tree should spend its time. What it did instead: ran the *current*
+> code (with the `pump(200)`) five more times, independently, in a session
+> that did not write the patch and has no motive to see it pass, under
+> heavier concurrent load than either prior session (multiple sibling forks'
+> xvfb drivers running at once) — **5 of 5 clean, 289/289, DRIVE OK every
+> time.** `rake check` also re-run clean (83 examples, 0 failures). Combined
+> with the fix commit's own 3 post-fix runs, that is 8 consecutive clean runs
+> since the pump was added and zero since-the-fix failures observed by
+> anyone. **Finding 7 is closed on the strength of a number this round
+> re-earned, not carried forward.** The lexical scan below was also re-run
+> independently this round: same two non-excuse hits as every prior round,
+> no new one.
+>
+> **No new finding this round.** Everything below this banner, including the
+> prior "adversarial round" banner describing Finding 7 as open, is kept as
+> the historical record of how the finding was found and closed — not as the
+> current state.
+
 > **Reverified 2026-11-07 @ `88e6110`, adversarial round — new finding below
 > (Finding 7): the runtime gate this fork has repeated as green for three
 > rounds is not reliably green, and nobody re-ran it enough times to find

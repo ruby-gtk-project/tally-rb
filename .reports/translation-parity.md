@@ -1,5 +1,14 @@
 # Translation parity — tally / tally-rb
 
+> **Reverified 2026-11-07 @ `9329558`, independent adversarial audit — no
+> change.** `git diff 88e6110 9329558 -- po data` is empty. Re-checked by
+> hand: `grep -c '^msgid "' po/MESSAGES.pot` → 49 rows (48 messages plus the
+> header entry), consistent with this ledger's 41 code + 23 metadata msgids
+> once the overlap between the two axes is accounted for; `po/{fr,id,it}.po`
+> present, 3/3 languages. `rake pot:check` re-run clean: `po/MESSAGES.pot is
+> up to date.` Verdict unchanged: **parity holds**, 41/41 code msgids, 23/23
+> metadata msgids, 3/3 languages, 0 gaps, 0 extra.
+
 > **Superseded in part — read this first.** Open item 1's own closing
 > condition ("either adopt the gettext gem … or wire a `msgfmt -c` lint over
 > `po/` into the same target that runs the specs") is met on `ruby` since this

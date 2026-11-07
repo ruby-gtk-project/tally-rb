@@ -1,5 +1,13 @@
 # Component identification — tally / tally-rb
 
+> **Reverified 2026-11-07 @ `9329558`, independent adversarial audit.** The
+> only change since the last reverification is `9329558`, which touches
+> `test/drive_tally.rb` (a `pump(200)` call, no widget/signal/CSS change) and
+> `PORTING.md` (prose). Re-ran the file-count check by hand: `find lib -name
+> '*.rb' | wc -l` → 22, unchanged; `git diff 88e6110 9329558 -- lib exe data
+> po` is empty. No new widget, signal, action or CSS class on either side.
+> The 22-port-class / 2-upstream-Lua-file + 1-C-stub census stands unchanged.
+
 > **Reverified 2026-11-06 @ `0be085f`.** Nothing under `lib/`, `exe/`, `data/`
 > or `po/` has changed since this census was written (the only intervening
 > commits — `898e703`, `0be085f` — touch gem packaging metadata and

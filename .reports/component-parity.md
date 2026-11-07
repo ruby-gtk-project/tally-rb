@@ -1,5 +1,15 @@
 # Component parity — tally / tally-rb
 
+> **Reverified 2026-11-07 @ `9329558`, independent adversarial audit — no
+> change.** `git diff 88e6110 9329558 -- lib exe data po` is empty; the only
+> commit since the last audit touches the test driver's timing and
+> `PORTING.md`'s prose. Units remain **19/22 at parity**; Gap 3 (nothing
+> compared against upstream running — still no Flatpak build of upstream
+> possible from this clone, no network for Lua/LuaGObject) remains open,
+> unattempted this round for the same reason as every prior round. This is
+> now the fourth consecutive round this gap has been re-stated rather than
+> closed or budgeted for.
+
 > **Superseded in part — read this first.** Gaps 1 and 2 of this audit are
 > closed on `ruby` since it was written: `ColorSelector` takes `valign:` as a
 > per-call-site argument defaulting to GTK's `FILL` and only `CounterMenu`

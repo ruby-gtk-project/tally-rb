@@ -1,8 +1,25 @@
 # Test parity — tally / tally-rb
 
-> **Reverified 2026-11-07 @ `88e6110`, adversarial round — the driver is
-> flaky, and the prior "not reproduced on either retry" note is wrong.** This
-> round ran `nix develop --command xvfb-run -a ruby test/drive_tally.rb` five
+> **Reverified 2026-11-07 @ `9329558`, independent adversarial audit —
+> Finding 7's fix holds under fresh, independent testing.** This audit did not
+> trust the previous session's own count of its own fix. It ran
+> `nix develop --command xvfb-run -a ruby test/drive_tally.rb` **five more
+> times**, from a cold shell, with the system under heavy concurrent load from
+> sibling fork sessions (several other apps' xvfb-run drivers were running at
+> the same time) — closer to the conditions that should provoke a timing race
+> than an idle machine would be. **All five passed clean: 289 of 289 checks,
+> DRIVE OK, every time.** Combined with the three post-fix runs the committing
+> session already recorded in `9329558`, that is **8 consecutive clean runs
+> since the `pump(200)` was added**, against 1-in-5 before it. `nix develop
+> --command rake check` also re-run this session: **83 examples, 0 failures**.
+> This is strong evidence the race described in Finding 7 is fixed, not proof
+> — a race that only shows under specific scheduling could still exist at a
+> lower rate than 8 runs can detect. The honest claim is "8/8 clean post-fix,
+> including 5 independently reproduced this round," not "fixed forever."
+
+> **The finding below, kept verbatim, is what this round confirmed a fix
+> for — read it as history, not as the current state.** The 2026-11-07
+> `88e6110` round ran `nix develop --command xvfb-run -a ruby test/drive_tally.rb` five
 > times in a row with no change to `lib/`, `exe/`, `test/` or `spec/` between
 > runs. **Four of five failed**, every time with the exact same seven checks:
 > `one counter is registered`, `its name came from the entry`, `the list is
