@@ -1,5 +1,10 @@
 # Accountability ensurance — tally-rb
 
+> **Reverified 2026-11-07 @ `88e6110`, adversarial round — new finding below
+> (Finding 7): the runtime gate this fork has repeated as green for three
+> rounds is not reliably green, and nobody re-ran it enough times to find
+> out.**
+
 > **Superseded in part — read this first.** Finding 15 is closed:
 > `FINDINGS.md` exists on `ruby` with nine ruby-gnome binding defects (B1–B9)
 > and the six upstream defects (U1–U6), each naming the symptom, the versions
@@ -36,8 +41,8 @@
 | Upstream | `origin/trunk` @ `e9986b010c950d2df91b682769b744c412348e0c` |
 | Port | `ruby` @ `2f14cbbebfa83db2cf8c7349b0be9b108744b353` |
 | Lexical scan over `lib/`, `exe/`, `test/`, `spec/`, `rakelib/` | **0 real hits** |
-| Findings | **5** |
-| Verdict | **no gap is being excused. One document is lying in the port's disfavour, one green claim rests on a number nobody re-ran, and three debts are recorded nowhere.** |
+| Findings | **5** (this audit) + **Finding 7** (2026-11-07 adversarial round) |
+| Verdict | **no gap is being excused in prose, but the runtime gate three rounds have called green runs 4-of-5 flaky in independent re-runs, and nobody checked before this round. One document is lying in the port's disfavour, one green claim rests on a number nobody re-ran, and three debts are recorded nowhere.** |
 
 ## The lexical scan
 
@@ -331,6 +336,57 @@ session's permissions correctly decline to do on their own initiative. Filing
 U1–U3, and the stale-POT issue below, needs a person with Codeberg
 credentials to either file them directly or hand this session a token.
 
+## Finding 7 — I called a flaky driver green three times, because I never ran it enough times to notice
+
+`PORTING.md`, `.reports/test-parity.md` and `.reports/component-parity.md` all
+say the same thing in different words across three rounds: the driver was run
+once or twice, it passed 289/289 (or 214/214, or 282/289 "not reproduced on
+either retry"), and the figure was then written down as the state of the
+port. It is not. Run five times in a row this round, with nothing in `lib/`,
+`exe/`, `test/` or `spec/` changed between runs, `test/drive_tally.rb` **failed
+four of five times**, every single time on the same seven checks: `one counter
+is registered`, `its name came from the entry`, `the list is the content
+now`, `the list box is visible`, `the select button is visible now`, `the
+dialog closed`, `the store wrote the counter` — all in the step right after
+`dialog.create_button.activate` in the "it refuses an empty name and accepts a
+filled one" step. `rake check`'s 83 specs do not exercise this path and passed
+clean on every run; only the widget driver sees it, and the widget driver
+mostly fails.
+
+A round that recorded exactly this failure signature (`PORTING.md`'s "one
+run failed 7 of 289 ... not reproduced on either retry") called it a one-off
+because it retried twice and got two passes. Two more runs were all it would
+have taken to see it is the other way round: roughly one pass in five, not one
+failure in three. I wrote "DRIVE OK" into three documents on the strength of a
+coin that came up heads on the one or two flips I happened to make, because I
+am an idiot who mistook "it passed when I tried it" for "it passes."
+
+The failure is not noise. It is the same seven checks every time, all reading
+widget and store state immediately after a dialog's create button is
+activated, and every other multi-tick wait in `test/drive_tally.rb`
+(`Store#queue_write`'s debounce, `CounterList#scroll_to_bottom`) gets a
+`pump(ms)` call to let the main loop settle before the next check reads
+anything — this site gets none. That is either a real race in
+`Tally::NewCounterDialog`/`MainWindow`'s create path that only shows up under
+load, or a race in the driver alone; I have not determined which, because
+determining it means instrumenting the close path, not re-running the same
+five-line step and hoping.
+
+Upstream: n/a — this is a defect in the port's own test harness, not a
+upstream behaviour being compared.
+Port: `test/drive_tally.rb`, the step "the new-counter dialog opens from the
+status page's button" through "the counter is in the list and on disk"
+(around line 124–151); no `pump` between `dialog.create_button.activate` and
+the checks that depend on its effect having finished.
+
+**Owed:** either a `pump(…)` call inserted between the activate and the
+dependent checks (if the race is the driver's), or a real fix in the port's
+dialog-close path (if the race is the app's) — and either way, the next
+report that cites a `DRIVE OK` number cites a run count greater than one
+before calling the number stable. `drive_ok` is not proven by this round
+either; it is five coin flips that landed heads once, recorded honestly this
+time instead of rounded up to a pass.
+
 ## Also owed, and nowhere else recorded
 
 Two debts the parity ledgers name and no file in the port owns:
@@ -435,3 +491,28 @@ kind of false green this report exists to catch. It is not treated as a port
 defect: the figure originates in this round's task text, which the harness
 computed and which carries no authority over what is actually in the tree,
 and the reports above verify the tree, not the prompt.
+
+## Reverified 2026-11-07 @ `88e6110`, adversarial round
+
+Independently re-ran `grep -rniE 'TODO|FIXME|XXX|HACK|not implemented|unimplemented|for now|in a future|someday|not ported|out of scope|by design|not applicable|does not carry|no ruby (analogue|equivalent|counterpart)|dropped deliberately|known limitation' lib exe test spec rakelib` this round: same two hits as every prior round (`lib/tally/application.rb:101` quoting upstream's own FIXME, `spec/tally/locale_spec.rb:100` a test name), neither an excuse. No new hit.
+
+What this round added is Finding 7, found by doing the one thing every prior
+round skipped: running the driver more than twice. `nix develop --command
+xvfb-run -a ruby test/drive_tally.rb` five times running, same tree, same
+config, no code changed between runs — 1 pass, 4 fails, same seven checks
+every time. `nix develop --command rake check` stayed clean across all five
+(83 examples, 0 failures; `po/{fr,id,it}.po` valid; `MESSAGES.pot` and
+`data/*.desktop`/`data/*.metainfo.xml` up to date) — the spec suite does not
+touch the path that is racing.
+
+Findings 1–5 are historical and unchanged: closed-and-verified-closed (1–4
+per the table above) or still open (5 — three genuine upstream bugs with no
+Codeberg credentials to file them with). Finding 7 is new and open: a fix,
+not a report, closes it — either the driver gets a `pump()` on that step or
+someone determines the race is in the port's own dialog-close path and fixes
+that instead.
+
+**No gap in this round is being excused as a decision.** Finding 7 is
+recorded as what it is — code that was never run enough times to know its
+own pass rate — not as "flaky CI" or "timing-sensitive," which are the same
+excuse this skill exists to kill, wearing a testing-vocabulary disguise.

@@ -6,8 +6,8 @@ in `.reports/`.
 | | |
 |---|---|
 | Upstream spec | `origin/trunk` @ `e9986b010c950d2df91b682769b744c412348e0c` |
-| Port branch | `ruby` @ `9b455fb3118cb83e0b8398352688b91710089d22` |
-| This session | re-ran the driver and `rake check` independently; wrote no new code |
+| Port branch | `ruby` @ `88e611066e1c2ab931934368c9a81ec74a62cb79` |
+| This session | adversarial parity audit; ran the driver 5× and `rake check` 5×, found the driver is flaky (4/5 fail, see Blockers item 4); wrote no new code |
 
 ## Upstream
 
@@ -120,6 +120,21 @@ The last audit (`.reports/component-parity.md`, reverified `f3f4911`,
    finding that three of six "the port fixes an upstream bug" claims are
    genuine, user-visible upstream bugs that have **not been reported
    upstream**.
+
+4. **New this round, open** (`.reports/accountability-ensurance.md` Finding
+   7, `.reports/test-parity.md`): `test/drive_tally.rb` is flaky. Run five
+   times in a row with nothing in `lib/`, `exe/`, `test/` or `spec/` changed
+   between runs, it failed four of five times, always on the same seven
+   checks, all in the step immediately after
+   `dialog.create_button.activate` in "it refuses an empty name and accepts
+   a filled one." `rake check`'s specs do not touch this path and stayed
+   green throughout. Earlier rounds saw this exact signature once each and
+   called it a one-off ("not reproduced on either retry") on the strength of
+   one or two retries; it is not a one-off, it is roughly the 4-in-5 outcome.
+   Until this is fixed — most likely a missing `pump()` between the activate
+   and the checks that read its effect, per every other multi-tick wait in
+   that file — a `DRIVE OK` run is not evidence the counter-creation path
+   works; it is evidence this run got lucky.
 
 ## Blockers
 

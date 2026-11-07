@@ -1,5 +1,42 @@
 # Test parity — tally / tally-rb
 
+> **Reverified 2026-11-07 @ `88e6110`, adversarial round — the driver is
+> flaky, and the prior "not reproduced on either retry" note is wrong.** This
+> round ran `nix develop --command xvfb-run -a ruby test/drive_tally.rb` five
+> times in a row with no change to `lib/`, `exe/`, `test/` or `spec/` between
+> runs. **Four of five failed**, every time with the exact same seven checks:
+> `one counter is registered`, `its name came from the entry`, `the list is
+> the content now`, `the list box is visible`, `the select button is visible
+> now`, `the dialog closed`, `the store wrote the counter` — all in the step
+> "the counter is in the list and on disk", immediately after
+> `dialog.create_button.activate` in the preceding step. One run passed clean
+> at 289/289. `nix develop --command rake check` passed clean on every run
+> (83 examples, 0 failures) — the spec suite does not touch this path, only
+> the driver does.
+>
+> This is not the one-off `PORTING.md` described ("one run failed 7 of 289
+> around dialog-close timing on a cold Xvfb; not reproduced on either retry").
+> It is the dominant outcome in this environment right now, and the task's
+> runtime gate for this round (`drive_ok=true, 289 checks passed, 0 failed`)
+> held in only one of five independent runs. The signature — always the same
+> seven checks, always the ones reading state immediately after a dialog's
+> create button is activated, with no `pump()` call between the activate and
+> the read — points at a real race between `Adw.Dialog`'s close (which the
+> port's `create_button.activate` handler presumably closes synchronously via
+> a signal callback) and the driver's one-tick-per-step model, not at
+> environment noise. See `test/drive_tally.rb`'s step "the new-counter dialog
+> opens…" through "the counter is in the list and on disk": no `pump(…)` sits
+> between `dialog.create_button.activate` and the checks that read its result,
+> while every other multi-tick wait in this file (`Store#queue_write`,
+> `CounterList#scroll_to_bottom`) gets one. Until the driver is fixed — a
+> `pump` between the activate and the read, or confirmation that the real app
+> closes the dialog synchronously and the race is in the driver alone, not in
+> `Tally::NewCounterDialog` itself — a green run of this suite is not
+> evidence that counter creation works; it is evidence that this run got
+> lucky. **Treat `drive_ok` as unproven until this is fixed**, regardless of
+> what any single run prints. Filed as Finding 7 in
+> `.reports/accountability-ensurance.md`.
+
 > **Superseded in part — read this first.** All seven coverage gaps C1–C7 are
 > closed on `ruby` since this was written. The driver is **289 checks across
 > 77 steps** (`nix develop --command xvfb-run -a ruby test/drive_tally.rb` →
