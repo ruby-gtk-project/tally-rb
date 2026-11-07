@@ -527,3 +527,32 @@ extracts them into a catalogue — see `.reports/translation-parity.md`.
   whether the port's sheet defines them. Both hold.
 - Gap 3 is the honest statement that Step 4 of the skill — run both and look —
   has not been performed on the upstream side.
+
+## Reverified 2026-11-07 @ `f3f4911`
+
+Independently re-ran the driver this session: `nix develop --command
+xvfb-run -a ruby test/drive_tally.rb` → **289 of 289 checks passed, DRIVE OK**
+(77 steps), matching the figure the superseding note above already carries,
+not transcribed from it. `git diff --stat c95adfa HEAD -- lib exe spec test`
+is empty, so no unit's widget/CSS/signal/text table has moved since the
+19/22-plus-fixes verdict was written.
+
+What *did* land since then — `f3f4911`, "Port data/*.desktop and
+data/*.metainfo.xml onto the po/ gettext pipeline" — touches only Unit 22
+(project metadata). `data/*.desktop` and `data/*.metainfo.xml` are now
+generated from new `.in` templates through `rake data`, verified byte-for-byte
+unchanged against the previously-committed files
+(`spec/tally/metainfo_spec.rb`, `rake check`'s `data:check` target, both
+re-run this session). Unit 22's row-by-row diff table is unaffected because
+the generated output is identical to what it replaced; the only change of
+substance is translation delivery, which belongs to
+`.reports/translation-parity.md` and is recorded there, not here.
+
+Units remain 19/22 at parity. Gap 3 (nothing compared against upstream
+*running*) remains open, unattempted this round for the same reason as last:
+building upstream's Flatpak needs network access to fetch and compile Lua 5.4
+and LuaGObject from source inside `org.gnome.Sdk`, out of scope for a pass
+budgeted for the data-file work and this re-audit. **Still the single largest
+open item in this ledger**, and it is not getting smaller by being repeated —
+a future round should budget for the Flatpak build specifically rather than
+re-stating that it has not happened.

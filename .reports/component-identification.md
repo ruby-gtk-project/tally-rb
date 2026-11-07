@@ -409,3 +409,17 @@ the renamed id.
 | Distinct msgids | 41 in code, +23 in metadata | 41 + 23 | identical sets, byte for byte |
 
 The four-axis comparison is `.reports/component-parity.md`.
+
+## Reverified 2026-11-07 @ `f3f4911`
+
+Re-checked in this session, not transcribed: `git diff --stat c95adfa HEAD --
+lib exe` is empty, so every widget/signal/action/CSS-class table above still
+describes the tree at HEAD unchanged. The only commits since `c95adfa`
+(`898e703`, `0be085f`, `81e08b3`, `f3f4911`) touch gem-packaging metadata, the
+parity reports themselves, and `data/*.desktop`+`data/*.metainfo.xml` plus
+`po/`, `rakelib/gettext.rake` and `spec/tally/metainfo_spec.rb` — none of
+which this report's 22-port-class / 2-upstream-Lua-file + 1-C-stub census
+covers. `origin/trunk` is unchanged (`e9986b0`). No new widget, signal,
+action, accelerator or CSS class exists on either side; the totals table is
+unchanged. Unit 22 (project metadata) in `component-parity.md` is the table
+affected by `f3f4911`, and that report's own reverification note covers it.

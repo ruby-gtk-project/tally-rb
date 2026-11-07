@@ -242,3 +242,54 @@ There are roughly twenty, and they are enumerated per unit in
   number is 214) — recorded in `.reports/accountability-ensurance.md`.
 - Both suites were run for this audit. No number in this document comes from a
   previous run or from reading code.
+
+## Reverified 2026-11-07 @ `f3f4911`
+
+Both suites re-run again this session, independently of the log above:
+
+```
+$ nix develop --command xvfb-run -a ruby test/drive_tally.rb
+289 of 289 checks passed
+DRIVE OK
+$ nix develop --command rake check
+...83 examples, 0 failures...
+po/fr.po is valid.
+po/id.po is valid.
+po/it.po:7: warning: header field 'Project-Id-Version' still has the initial default value
+po/it.po is valid.
+po/MESSAGES.pot is up to date.
+data/*.desktop and data/*.metainfo.xml are up to date.
+check passed.
+```
+
+Matches the figures the superseding note at the top already carries, this
+time with `rake check` also covering the two new `data`/`data:check` targets
+that `f3f4911` added (`rakelib/gettext.rake`) — the mechanism that makes a
+false claim about the generated `.desktop`/`.metainfo.xml` files impossible to
+carry forward unexamined, the same shape of protection `rake check` already
+gave the specs and the catalogue lint.
+
+Upstream still has no test suite (unchanged — no new upstream commit; census
+re-run, still empty). Parity remains 0/0, met trivially. **The seven coverage
+gaps C1–C7 remain closed**, checked by reading the driven steps rather than a
+single grep token (C1's own fix is spelled `close-request` +
+`Gtk::Window.list_toplevels`, not a method literally named
+`close_popouts`, which a first pass of this re-verification got wrong and is
+corrected here): `test/drive_tally.rb:1023-1039` opens two pop-outs, emits
+`close-request` on the main window, and asserts `list_toplevels` is down to
+one; `key_capture_widget` is asserted at two sites; `viewport` at three;
+`shutdown` is driven and asserted at six. No new coverage gap was found this
+round — the only files that changed since the 289/83 figures were first
+produced are `data/`, `po/`, `rakelib/gettext.rake` and
+`spec/tally/metainfo_spec.rb`, and the new rake targets they added
+(`data`, `data:check`) are exercised by `rake check` itself, which this
+session ran and watched pass rather than assumed.
+
+One narrowness worth naming plainly, per this round's brief: the runtime gate
+is **289 checks across 77 steps covering the port's 22 classes**, not a
+per-behaviour exhaustive count. C1–C7 closed the gaps a previous round found
+by grepping for missing assertions; this round grepped the same way again and
+found no eighth. That the search keeps coming up empty is evidence, not proof
+— a coverage gap is only visible once someone thinks to grep for its absence,
+and the discipline of re-grepping every round is the safeguard, not a
+one-time result.

@@ -379,3 +379,59 @@ waived. (`.reports/translation-parity.md`, Open item 1.)
   not because a sentence was softened.
 - The parity ledgers cite no document as authority for a gap. `PORTING.md` was
   read for navigation and is itself Finding 1.
+
+## Reverified 2026-11-07 @ `f3f4911`
+
+Independently re-ran `.claude/skills/accountability-ensurance/scripts/find-excuses.sh .`
+and the wider grep, this session:
+
+```
+$ grep -rniE 'TODO|FIXME|XXX|HACK|not implemented|unimplemented|for now|in a future|\
+someday|not ported|out of scope|by design|not applicable|does not carry|\
+no ruby (analogue|equivalent|counterpart)|dropped deliberately|known limitation' \
+  lib exe test spec rakelib
+rakelib/gettext.rake:306:# messages.mo` — does not carry over as a build step, because Tally::Locale
+lib/tally/application.rb:101:    # off upstream's own FIXME ("Handle each error case individually"): the
+spec/tally/locale_spec.rb:100:    it "falls back to the msgid for a string the catalogue does not carry" do
+```
+
+One new hit, added by `f3f4911`: `rakelib/gettext.rake:306`, "does not carry
+over as a build step, because `Tally::Locale` reads `po/*.po` directly and
+there is no `.mo` to compile." Read in full (`:304-309`): it names the exact
+upstream `Makefile` rule being replaced, states what *does* carry over (the
+`msgfmt -c` validation), and is the same already-disclosed divergence as
+Open item 1 of `.reports/translation-parity.md` — not a new excuse, a comment
+documenting a known one at its new home. **Not a finding.**
+
+`find-excuses.sh`'s own hits are unchanged in kind from the last round — every
+one is inside a report quoting the skill's vocabulary table or stating a rule,
+none inside a sentence that excuses a port gap. Checked line-by-line this
+round rather than assumed identical to last round's list.
+
+**No new accountability finding.** The three that were open at the last
+`0be085f` reverification are open still, unchanged, for the reasons already
+recorded there:
+
+- Finding 4 and 5 (the stale-document and stale-number failures) — **closed,
+  historical**, unchanged.
+- Finding 6 (three genuine upstream bugs, user-visible, none filed) — open.
+  Checked again this round whether the credential blocker had moved: it has
+  not. `gh repo view vtrlx/tally --json isArchived` still returns `true`
+  (archived, issues disabled), and this session still has no Codeberg
+  credentials. Filing them remains a named, owned gap, not a silent drop.
+- The two "also owed" items (the stale-template bug, and nothing compared
+  against upstream running) are open, unchanged, for the reasons their own
+  reports give.
+
+**On the task's framing of the runtime gate as "25 components":** the port's
+own census (`.reports/component-identification.md`) counts **22** port
+classes against 2 upstream Lua files and 1 C stub, and that figure has not
+changed. This session found no document in the repository, old or new, that
+produces the number 25 for anything — not a step count (77), not a check
+count (289), not a unit count (22), not a message count (41 or 64). Recorded
+here rather than silently reconciled, because silently making a number agree
+with an instruction rather than with the repository would be exactly the
+kind of false green this report exists to catch. It is not treated as a port
+defect: the figure originates in this round's task text, which the harness
+computed and which carries no authority over what is actually in the tree,
+and the reports above verify the tree, not the prompt.

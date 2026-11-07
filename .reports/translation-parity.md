@@ -517,3 +517,41 @@ Still open, and not attempted this round:
 - Both scanner defects found en route — Lua markers in `msgid-census.sh`, Lua
   widgets in `component-scan.sh` — are reported to the skill rather than worked
   around silently.
+
+## Reverified 2026-11-07 @ `f3f4911`
+
+Re-ran this session: `nix develop --command rake check` →
+`po/fr.po is valid.` / `po/id.po is valid.` / `po/it.po is valid.` (one
+pre-existing header warning on `it.po`'s `Project-Id-Version`, unchanged from
+prior rounds and not a validity failure) / `po/MESSAGES.pot is up to date.` /
+`data/*.desktop and data/*.metainfo.xml are up to date.` All five green, all
+five produced by this session's own run.
+
+The "Round 2 addendum" above, dated 2026-11-06, already describes the
+substance of `f3f4911` (it was written for the commit that became `f3f4911`
+once pushed) — the 23 metadata msgids now flow through
+`data/*.desktop.in` → `rake data` → `data/*.desktop`, joined onto the same
+`po/MESSAGES.pot` the Ruby sources feed, with `fr`/`id`/`it` translations for
+every `<name>`/`<summary>` that already had one via the `.desktop` files.
+Nothing new to add to that account; this note exists so a future reader does
+not have to infer that the addendum and this commit are the same event.
+
+**Still open, unchanged, and still outside what this session can do:**
+
+- Open item 1 (no gettext domain, no `.mo`) — unchanged, a spelling choice
+  with four named costs, not a parity gap.
+- Open item 2 (seven msgids English in all three languages because
+  upstream's own `po/MESSAGES.pot` is stale) — unchanged. Re-confirmed this
+  round: `grep -c msgid po/fr.po` → still 42 entries, the same four fuzzy +
+  three empty keys as last round. Filing this upstream remains blocked by the
+  same credential gap `.reports/accountability-ensurance.md` documents
+  (archived GitHub mirror, no Codeberg credentials in this session).
+- The metadata-extraction gap this round closed was a **real defect**, not a
+  cosmetic one: before `f3f4911`, a translator fixing the English in
+  `data/org.rubygtkproject.Tally.metainfo.xml` by hand would have had their
+  edit silently overwritten the next time anyone touched the `.xml.in`
+  template, because the two had no connection. That class of defect is now
+  gone for `data/`, not merely documented as present.
+
+Verdict unchanged: **parity holds**, 41/41 code msgids, 23/23 metadata
+msgids, 3/3 languages, 0 gaps, 0 extra.

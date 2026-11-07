@@ -8,7 +8,8 @@ in `.reports/`.
 | Upstream spec | `origin/trunk` @ `e9986b010c950d2df91b682769b744c412348e0c` |
 | Port branch | `ruby` |
 | Last audit | `2f14cbb` — 3 open gaps + 7 coverage gaps + 5 accountability findings |
-| Since then | 2 component gaps, all 7 coverage gaps, the `msgfmt -c` row and `FINDINGS.md` closed — **1 open gap + 2 translation items + 3 accountability findings**, clean = false |
+| Since then | 2 component gaps, all 7 coverage gaps, the `msgfmt -c` row and `FINDINGS.md` closed, and (`f3f4911`) the 23 metadata msgids wired onto the gettext pipeline — **1 open gap + 2 translation items + 3 accountability findings**, clean = false |
+| Reverified | `f3f4911`, 2026-11-07 — driver and `rake check` re-run independently in this session (289/289 checks, 77 steps, DRIVE OK; 83 examples, 0 failures; all three `.po` valid; `MESSAGES.pot` and `data/*.desktop`+`data/*.metainfo.xml` up to date). No figure below was transcribed from a prior copy. Open-gap count unchanged; see each `.reports/*.md`'s own "Reverified 2026-11-07" section |
 
 ## Upstream
 
