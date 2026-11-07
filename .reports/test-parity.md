@@ -1,5 +1,31 @@
 # Test parity — tally / tally-rb
 
+> **Round 2, 2026-11-07: Finding 7 reappeared at a lower trigger rate, exactly
+> as this report's own caveat warned — fixed again, this time by removing the
+> guess instead of widening it.** The prior fix was a fixed `pump(200)` after
+> `dialog.create_button.activate`. This round's first isolated run of
+> `nix develop --command xvfb-run -a ruby test/drive_tally.rb` (no sibling
+> load, a fresh shell) failed **7 of 289**, on the exact same seven checks
+> Finding 7 names, and failed identically on an immediate re-run — not a
+> one-off. Root cause: `Adw.Dialog`'s close runs on the frame clock, not a
+> GLib timer, so how long it actually takes depends on how fast the renderer
+> produces a frame, which is exactly the kind of thing a fixed millisecond
+> margin cannot account for — "8 consecutive clean runs" had measured the
+> margin against the machine's load at the time, not against the close. The
+> fix: `test/drive_tally.rb` gained `pump_until(timeout_ms) { condition }`,
+> which polls the main loop for the actual condition (`visible_dialog.nil?`)
+> instead of spending a fixed duration, with the timeout only as a ceiling.
+> Verified clean afterward: 2 further isolated runs, then 3 back-to-back runs
+> while this machine had multiple sibling fork sessions' `xvfb-run` drivers
+> running concurrently (the same kind of contention `9329558`'s "8
+> consecutive" count was gathered under, and the condition that triggers this
+> race) — **5/5 clean, 289/289, `DRIVE OK`**, plus `rake check` clean (83
+> examples, 0 failures). The honest claim is unchanged in shape from last
+> round's: this is strong evidence, not proof, and the next round should keep
+> re-running rather than trust this count either. What changed is the method
+> — a condition wait no longer has a load level it can be too slow for.
+> See `lib/tally` is untouched by this fix; only `test/drive_tally.rb` moved.
+
 > **Reverified 2026-11-07 @ `9329558`, independent adversarial audit —
 > Finding 7's fix holds under fresh, independent testing.** This audit did not
 > trust the previous session's own count of its own fix. It ran

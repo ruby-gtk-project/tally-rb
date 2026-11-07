@@ -55,6 +55,32 @@ def pump(ms)
   end
 end
 
+# Like #pump, but for waiting on something that happens once rather than on
+# a fixed-length timer: it stops the moment `condition` is true instead of
+# always spending its whole budget, and `timeout_ms` is a ceiling, not an
+# estimate.
+#
+# This exists because #pump's fixed duration was still a race for
+# Adw.Dialog's close: that close runs on the frame clock, not a GLib timer,
+# so how long it takes to actually finish depends on how fast the renderer
+# gets a frame out — which varies with how loaded the machine happens to be.
+# A fixed 200ms margin was long enough on an idle box and too short under
+# contention (3 consecutive drives, or another process competing for the
+# CPU); re-running the drive 8 times clean in two quiet sessions proved
+# nothing about a loaded one. Polling the actual condition removes the
+# guess: it is as fast as the quick case and as patient as the slow one.
+def pump_until(timeout_ms, &condition)
+  (Process.clock_gettime(Process::CLOCK_MONOTONIC) + (timeout_ms / 1000.0)).then do |deadline|
+    until condition.call
+      if Process.clock_gettime(Process::CLOCK_MONOTONIC) >= deadline
+        break
+      end
+
+      GLib::MainContext.default.iteration(false)
+    end
+  end
+end
+
 # Every Gtk::Label text in a widget tree.
 #
 # The two rows an Adw.AboutDialog's add_link puts on its page are not readable
@@ -138,15 +164,18 @@ GtkDriver.drive(Tally::Application.new, shots: SHOTS) do |d, app|
       d.check("create is sensitive once named") { dialog.create_button.sensitive? }
       dialog.create_button.activate
       # Adw.Dialog's close is not guaranteed synchronous with the handler that
-      # calls it — the next step reads the dialog's closed state and the
-      # store's write straight off of this, so it needs the same main-loop
-      # turn-back every other multi-tick wait in this file gets (see #pump
-      # above `Store#queue_write` and `CounterList#scroll_to_bottom`).
-      # Without it this step is a race: PORTING.md and
+      # calls it, and it runs on the frame clock rather than a GLib timer —
+      # the next step reads the dialog's closed state and the store's write
+      # straight off of this, so it has to wait for the close to actually
+      # finish, not for a fixed margin that guesses how long that takes.
+      # A fixed `pump(200)` here was still a race: PORTING.md and
       # .reports/test-parity.md both record it failing 4 of 5 independent
-      # runs with no code change, always on the checks right after this
-      # line.
-      pump(200)
+      # runs with no code change, and it reappeared again after 8 clean runs
+      # once three drives ran back to back on a loaded machine — the margin
+      # was long enough when idle and too short under contention. Polling
+      # the actual condition (see #pump_until, above #pump) removes the
+      # guess.
+      pump_until(2000) { app.window.visible_dialog.nil? }
     end
   end
 
