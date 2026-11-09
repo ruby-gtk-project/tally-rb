@@ -63,7 +63,6 @@ Gem::Specification.new do |spec|
   end
   package_metadata_files = %w[
     CHANGELOG.md
-    COPYING
     LICENSE.md
     README.md
     sig/tally/rb.rbs
@@ -97,11 +96,6 @@ Gem::Specification.new do |spec|
   spec.executables = ["tally"]
   spec.require_paths = ["lib"]
 
-  # Runtime dependencies. Every file under lib/ opens with `require "adwaita"`,
-  # and the executable is a GTK4 application, so these are not optional extras:
-  # without them `gem install tally-rb && tally` raises LoadError on the first
-  # require. The adwaita gem pulls gtk4 in, and gtk4 pulls glib2, but both are
-  # named here because the port requires them directly.
   spec.add_dependency("adwaita", "~> 4.3", ">= 4.3.8")                              # ruby >= 3.1
   spec.add_dependency("glib2", "~> 4.3", ">= 4.3.8")                                # ruby >= 3.1
   spec.add_dependency("gtk4", "~> 4.3", ">= 4.3.8")                                 # ruby >= 3.1

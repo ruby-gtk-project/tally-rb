@@ -14,12 +14,19 @@
 # in a way no local run would show.
 name: Flatpak
 
+permissions:
+  contents: read
+
 on:
   push:
     branches: [ruby]
   pull_request:
     branches: [ruby]
   workflow_dispatch:
+
+concurrency:
+  group: "${{ github.workflow }}-${{ github.ref }}"
+  cancel-in-progress: true
 
 jobs:
   flatpak:
@@ -41,7 +48,7 @@ jobs:
           - org.rubygtkproject.Tally.Devel
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       # The manifests live in data/, not the repository root, and their `dir`
       # source is `..` — which flatpak-builder resolves against the manifest's

@@ -8,6 +8,9 @@
 # noticed. A failing `rake pot:check` is that noticing.
 name: Translations
 
+permissions:
+  contents: read
+
 on:
   push:
     branches: [ruby]
@@ -15,13 +18,17 @@ on:
     branches: [ruby]
   workflow_dispatch:
 
+concurrency:
+  group: "${{ github.workflow }}-${{ github.ref }}"
+  cancel-in-progress: true
+
 jobs:
   catalogues:
     name: Catalogues are in step with the source
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       # The devShell is where rxgettext, msgmerge and the app's runtime gems
       # live; there is no other environment in which this repository builds.

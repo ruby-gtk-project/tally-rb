@@ -57,6 +57,7 @@ PLATFORMS
 
 DEPENDENCIES
   adwaita
+  glib2
   gtk4
 
 BUNDLED WITH

@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require_relative "rb/version"
-
 # The part of Tally that loads without a display.
 #
 # This file exists because `require "gtk4"` initialises GTK at require time and
@@ -24,3 +22,4 @@ require_relative "counter"
 require_relative "lua_config"
 require_relative "store"
 require_relative "metainfo"
+require_relative "rb/version"
